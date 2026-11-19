@@ -1,0 +1,57 @@
+import json
+S = {
+ "dealer": {"voice": "fnYMz3F5gMEDGMWcH1ex", "voiceName": "Finley", "lines": [
+  ["shuffle","[professional] Shuffle up and deal."],["heroTurn","[politely] Action is on you."],["allin","[firm] All in."],["heroAllin","[firm] You're all in."],
+  ["allinCall","[calm] All in, and a call. Cards up, please."],["winHero","[warmly] You win the pot."],["winHero","[warmly] Nice hand. The pot is yours."],
+  ["winOther","[professional] The pot goes to the winner."],["split","[professional] Split pot."],
+  ["hand0","[professional] High card wins."],["hand1","[professional] Pair wins."],["hand2","[professional] Two pair wins."],["hand3","[professional] Three of a kind wins."],
+  ["hand4","[professional] Straight wins."],["hand5","[professional] Flush wins."],["hand6","[professional] Full house wins."],["hand7","[surprised] Four of a kind!"],
+  ["hand8","[excited] Straight flush!"],["hand9","[excited] A royal flush!"],
+  ["blindsUp","[professional] Blinds are going up."],["antes","[professional] Antes are now in play."],["eliminated","[professional] A player has been eliminated."],
+  ["bubble","[professional] We're on the money bubble."],["itm","[pleased] Everyone left is in the money."],["headsUp","[professional] We're heads up."],
+  ["champHero","[excited] Congratulations! You win the tournament!"],["champOther","[professional] We have a champion."],["voiceOn","[politely] Dealer voice is on."]]},
+ "rock": {"voice": "0hh7H4ZVAtaGpm1VZyEN", "voiceName": "David", "lines": [
+  ["greet","[gruff] Evening."],["greet","[gruff] Let's play some cards."],["raiseBig","[firm] Raise."],["allin","[calm] I'm all in."],["call","[flat] Call."],["fold","[flat] Fold."],
+  ["winSmall","[gruff] I'll take it."],["winBig","[satisfied] Patience pays."],["winBig","[chuckles] Waited all night for that one."],["lose","[sighs] Fair enough."],
+  ["badBeat","[frustrated sigh] Of course."],["badBeat","[muttering] That's poker, I suppose."],["suckout","[sheepish] Lucky card. Sorry, partner."],["missDraw","[grumbles] Missed."],
+  ["foldedWinner","[annoyed] Huh. I folded that."],["foldedWinner","[sighs] Should've stayed in."],["bust","[tired] Good game, everyone."],["idle","[gruff] Quiet table tonight."],
+  ["heroSlow","[patient] Take your time."],["niceHand","[warmly] Well played."],
+  ["r_goodLuck","[gruff] You too."],["r_niceHand","[gruff] Thank you kindly."],["r_unlucky","[sighs] Yep."],["r_wow","[chuckles] Somethin' else, huh?"],["r_thanks","[gruff] Mm-hm."],["r_gamble","[dry] We'll see."]]},
+ "shark": {"voice": "dmWfLQZJq7wNPv9WmtiM", "voiceName": "Emma", "lines": [
+  ["greet","[sarcastic] Good luck. You'll need it."],["greet","[confident] Shuffle up. Let's go."],["raiseBig","[confident] Price just went up."],["raiseBig","[coolly] Let's make this interesting."],
+  ["allin","[coolly] I'm all in. Your move."],["call","[flat] I'll see that."],["fold","[dismissive] Take it."],["winSmall","[dry] Thanks for the chips."],
+  ["winBig","[laughs softly] Pleasure doing business."],["winBig","[smug] That's how it's done."],["lose","[flatly] Nice hand. This time."],["badBeat","[irritated] You called with THAT?"],
+  ["badBeat","[cold] Enjoy it while it lasts."],["suckout","[smug] Sometimes the deck helps."],["missDraw","[annoyed] Missed. Fine."],["foldedWinner","[frustrated] I had you. I won't fold that again."],
+  ["bust","[icy] Well played. I'll be back."],["idle","[dry] Tight table. I like it."],["heroSlow","[impatient] Clock, please."],["heroSlow","[sarcastic] Tick tock."],["niceHand","[grudging] Not bad."],
+  ["r_goodLuck","[sarcastic] I don't need luck."],["r_niceHand","[dry] I know."],["r_unlucky","[coolly] Luck had nothing to do with it."],["r_wow","[dry] Pay attention."],["r_thanks","[flat] Sure."],["r_gamble","[mischievously] Careful what you wish for."]]},
+ "maniac": {"voice": "R9RZPy40Zzy1wNxrgQpj", "voiceName": "Witty McGee", "lines": [
+  ["greet","[excited] Let's gamble!"],["greet","[laughs] Who's ready to lose some chips?"],["raiseBig","[shouting] Raise! Always raise!"],["raiseBig","[excited] Too cheap! Let's go bigger!"],
+  ["allin","[shouting] ALL IN, baby!"],["allin","[excited] Ship it!"],["call","[annoyed] Fine, I call."],["fold","[groans] Ugh. Fine."],["winSmall","[laughs] Mine!"],
+  ["winBig","[ecstatic] WHOO! Pay the man!"],["winBig","[laughing] Told you I had it!"],["lose","[frustrated] Unbelievable!"],["badBeat","[furious] ARE YOU SERIOUS?!"],
+  ["badBeat","[angry] That river should be illegal!"],["suckout","[laughs] Never in doubt!"],["missDraw","[frustrated] One card! I needed ONE card!"],["foldedWinner","[shouting] I FOLDED THAT?!"],
+  ["foldedWinner","[groans] Why do I ever fold?!"],["bust","[groans] Worth it. Totally worth it."],["idle","[bored] Somebody raise already."],["heroSlow","[impatient] Any day now!"],
+  ["niceHand","[grudgingly] Lucky."],["tellWeak","[taunting] You don't have anything!"],["tellWeak","[cocky] Just fold. I've got you."],
+  ["r_goodLuck","[laughs] Luck is for the weak!"],["r_niceHand","[cocky] Obviously!"],["r_unlucky","[frustrated] Tell me about it!"],["r_wow","[excited] WOW is right!"],["r_thanks","[laughs] You owe me!"],["r_gamble","[excited] NOW we're talking!"]]},
+ "station": {"voice": "KHDywVwjZ97ShJLe4NCr", "voiceName": "Kymmiee", "lines": [
+  ["greet","[cheerful] Hi everyone! Good luck!"],["raiseBig","[giggles] Ooh, I'll raise!"],["allin","[nervous laugh] Why not? All in!"],["call","[curious] I'll call. I just have to see it!"],
+  ["call","[happy] Call! I'm curious."],["fold","[sighs] Okay, okay, I fold."],["winSmall","[happy] Oh, nice!"],["winBig","[excited] No way! That's my biggest pot ever!"],
+  ["lose","[disappointed] Aww, so close!"],["badBeat","[upset] Oh no, not the river!"],["badBeat","[whiny] I had you! Didn't I?"],["suckout","[giggles] Sorry! I had to see one more card."],
+  ["missDraw","[sad] Aww, I needed just one more card!"],["foldedWinner","[gasps] Wait, I would have won that!"],["bust","[sad] Aww. That was fun. Good luck, everyone!"],
+  ["idle","[cheerful] Anyone else hungry?"],["idle","[curious] Wait, does a flush beat a straight?"],["heroSlow","[warmly] Take your time, friend!"],["niceHand","[warmly] Nice hand!"],
+  ["tellStrong","[hesitant] Hmm, what should I do?"],["tellStrong","[nervous] Ooh. Okay, okay."],["tellWeak","[sighs] Hmm."],
+  ["r_goodLuck","[warmly] Aww, you too!"],["r_niceHand","[giggles] Thanks! I got lucky!"],["r_unlucky","[sad] I know, right?"],["r_wow","[excited] So exciting!"],["r_thanks","[cheerful] Any time, friend!"],["r_gamble","[excited] Yes! Let's play!"]]},
+ "pro": {"voice": "W93ubvztnBbrUnasPBDG", "voiceName": "Danny", "lines": [
+  ["greet","[warmly] Evening, all. Good luck."],["raiseBig","[calm] I'll put some pressure on."],["allin","[calm] I'm all in."],["call","[calm] Call."],["fold","[calm] Good bet. I fold."],
+  ["winSmall","[calm] Thanks."],["winBig","[pleased] Good hand, everyone."],["lose","[calm] Nice hand. Well played."],["badBeat","[sighs] Variance. It happens."],["badBeat","[resigned] That's the game."],
+  ["suckout","[apologetic] Lucky river. Sorry about that."],["missDraw","[calm] Didn't get there."],["foldedWinner","[wry laugh] Disciplined fold. Wrong result."],
+  ["bust","[warmly] Good game. Well played, all."],["idle","[curious] Interesting table tonight."],["heroSlow","[curious] Tough spot?"],["niceHand","[warmly] Nicely done."],
+  ["r_goodLuck","[warmly] Good luck to you."],["r_niceHand","[warmly] Thanks. You too."],["r_unlucky","[calm] That's poker."],["r_wow","[chuckles] Quite a hand."],["r_thanks","[warmly] Of course."],["r_gamble","[chuckles] Within reason."]]},
+}
+json.dump(S, open("script.json", "w"), indent=1)
+total = 0
+for k, v in S.items():
+    prompt = "\n\n[long pause]\n\n".join(t for _, t in v["lines"])
+    open(f"prompt_{k}.txt", "w").write(prompt)
+    total += len(prompt)
+    print(k, len(v["lines"]), "lines", len(prompt), "chars")
+print("total chars", total, "lines", sum(len(v["lines"]) for v in S.values()))

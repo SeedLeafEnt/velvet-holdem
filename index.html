@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06080b">
+<title>Velvet Hold'em</title>
+<meta name="description" content="A 3D Texas Hold'em table with blackjack and roulette.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Velvet">
+<link rel="stylesheet" href="css/fonts.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><span class="brand-mark">Velvet</span><span class="brand-sub">Hold'em</span></div>
+    <div id="status"><div id="blinds">Blinds 10/20</div><div id="substatus">No-Limit · 5 seats</div></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnChat" aria-label="Table talk"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"/></svg></button>
+      <button class="icon-btn" id="btnView" aria-label="Change camera view"><svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="icon-btn" id="btnSound" aria-label="Mute sound"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="w" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      <button class="icon-btn" id="btnMenu" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <canvas id="gl"></canvas>
+    <div id="cUI" hidden><div id="cLabels"></div><div id="cBubble" class="cbubble"></div><div id="cResult"></div><div id="rlHist"></div><div id="rlBoard"></div></div>
+    <div id="overlay">
+      <div id="potLbl" class="off"><div class="main">Pot 0</div><div class="side"></div></div>
+      <div id="banner"><div class="b1"></div><div class="b2"></div></div>
+    </div>
+    <canvas id="fx"></canvas>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <footer id="dock">
+    <div class="row" id="infoRow">
+      <div id="handName">Take a seat to begin</div>
+      <div id="odds" hidden><div class="odds-bar"><i></i></div><span>Win <b id="oddsVal">0%</b></span></div>
+    </div>
+    <div class="row" id="sliderRow" hidden>
+      <button class="step-btn" id="btnMinus" aria-label="Decrease raise">−</button>
+      <input type="range" id="raiseSlider" min="0" max="100" step="5" value="0" aria-label="Raise amount">
+      <button class="step-btn" id="btnPlus" aria-label="Increase raise">+</button>
+    </div>
+    <div id="midRow" class="msg"></div>
+    <div id="actions">
+      <button class="act fold" id="btnFold" disabled>Fold</button>
+      <button class="act call" id="btnCall" disabled>Check</button>
+      <button class="act raise" id="btnRaise" disabled>Raise</button>
+    </div>
+  </footer>
+  <footer id="cdock" hidden>
+    <div class="row"><div id="cInfo"></div></div>
+    <div class="row" id="cChipsRow"><div id="cChips"></div></div>
+    <div id="cActs"></div>
+  </footer>
+</div>
+
+<div id="loading"><div><div class="logo-big" style="font-size:54px">VELVET</div><div class="spin"></div><p id="loadMsg">Setting up the table…</p></div></div>
+
+<div class="overlay start" id="startScreen" hidden>
+  <div class="sheet">
+    <div class="logo-big">VELVET</div>
+    <div class="logo-sub">Hold'em</div>
+    <svg class="fan" viewBox="0 0 120 34" aria-hidden="true"><g stroke="#c9a253" stroke-width="1" fill="none" opacity=".75"><path d="M60 33L60 3"/><path d="M60 33L44 5"/><path d="M60 33L76 5"/><path d="M60 33L30 11"/><path d="M60 33L90 11"/><path d="M60 33L18 21"/><path d="M60 33L102 21"/><path d="M8 33H112"/></g></svg>
+    <p class="tagline">No-Limit Texas Hold'em. You against four AI players who talk, bluff and give away tells.</p>
+    <button class="primary career" id="btnCareer">Career mode</button>
+    <div class="or"><span>or play a quick game</span></div>
+    <div class="opt-label">Game</div>
+    <div class="seg" id="segMode">
+      <button data-v="sng" aria-pressed="true">Sit &amp; Go</button>
+      <button data-v="ko" aria-pressed="false">Bounty</button>
+      <button data-v="cash" aria-pressed="false">Cash</button>
+    </div>
+    <p class="opt-desc" id="modeDesc"></p>
+    <div id="structWrap">
+      <div class="opt-label">Blind levels</div>
+      <div class="seg" id="segStruct">
+        <button data-v="turbo" aria-pressed="true">Turbo · 3 min</button>
+        <button data-v="regular" aria-pressed="false">Regular · 6 min</button>
+      </div>
+    </div>
+    <div class="opt-label">Opponents</div>
+    <div class="seg" id="segLevel">
+      <button data-v="relaxed" aria-pressed="true">Relaxed</button>
+      <button data-v="sharp" aria-pressed="false">Sharp</button>
+    </div>
+    <button class="primary" id="btnStart">Take a seat</button>
+    <button class="secondary" id="btnContinue" hidden>Continue</button>
+  </div>
+</div>
+
+<div class="overlay pop lobby" id="lobby" hidden>
+  <div class="sheet lobsheet">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Career</h2>
+    <div class="lob-head">
+      <div><span class="k">Bankroll</span><b id="lobBank">$1,000</b></div>
+      <div class="lvl"><span class="k">Level <em id="lobLvl">1</em></span><i class="xpbar"><i id="lobXp"></i></i></div>
+    </div>
+    <button class="secondary daily" id="lobDaily">Claim daily chips</button>
+    <button class="secondary daily" id="lobBail" hidden>Broke? Take $200 from the house</button>
+    <div class="tabs" id="lobTabs"><button data-tab="rooms" class="on">Rooms</button><button data-tab="daily">Challenges</button><button data-tab="trophies">Trophies</button></div>
+    <div class="pane" data-pane="rooms" id="lobRooms"></div>
+    <div class="pane" data-pane="daily" id="lobDailyList" hidden></div>
+    <div class="pane" data-pane="trophies" id="lobTrophies" hidden></div>
+  </div>
+</div>
+
+<div class="overlay" id="menuScreen" hidden>
+  <div class="sheet">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Table settings</h2>
+    <div id="tourneyBox"></div>
+    <h3>Cards</h3>
+    <div class="setrow"><span>Card style</span><div class="seg" id="segCards"><button data-v="classic" aria-pressed="true">Classic</button><button data-v="jumbo" aria-pressed="false">Jumbo</button></div></div>
+    <div class="setrow"><span>Four-color deck</span><button class="switch" id="swDeck4" role="switch" aria-checked="false" aria-label="Four-color deck"></button></div>
+    <h3>Table</h3>
+    <div class="setrow"><span>Camera</span><div class="seg" id="segView"><button data-v="seated" aria-pressed="true">Seated</button><button data-v="overhead" aria-pressed="false">Overhead</button></div></div>
+    <div class="setrow"><span>Graphics</span><div class="seg" id="segQuality"><button data-v="high" aria-pressed="true">High</button><button data-v="saver" aria-pressed="false">Battery saver</button></div></div>
+    <div class="setrow"><span>Speed</span><div class="seg" id="segSpeed"><button data-v="relaxed" aria-pressed="false">Slow</button><button data-v="normal" aria-pressed="true">Normal</button><button data-v="fast" aria-pressed="false">Fast</button></div></div>
+    <div class="setrow"><span>Show win odds</span><button class="switch" id="swOdds" role="switch" aria-checked="true" aria-label="Show win odds"></button></div>
+    <h3>Sound &amp; voices</h3>
+    <div class="setrow"><span>Sound effects</span><button class="switch" id="swSound" role="switch" aria-checked="true" aria-label="Sound effects"></button></div>
+    <div class="setrow"><span>Voices</span><button class="switch" id="swVoice" role="switch" aria-checked="true" aria-label="Voices"></button></div>
+    <div class="setrow"><span>Player chat</span><button class="switch" id="swChat" role="switch" aria-checked="true" aria-label="Player chat"></button></div>
+    <div class="setrow"><span>Music</span><button class="switch" id="swMusic" role="switch" aria-checked="true" aria-label="Music"></button></div>
+    <div class="setrow"><span>Room ambience</span><button class="switch" id="swAmb" role="switch" aria-checked="false" aria-label="Room ambience"></button></div>
+    <h3>This session</h3>
+    <div class="stats" id="statsBox"></div>
+    <button class="secondary" id="btnHistory">Hand history</button>
+    <h3>Keyboard</h3>
+    <p class="keys"><kbd>F</kbd> fold · <kbd>C</kbd> check or call · <kbd>R</kbd> raise, then <kbd>R</kbd> or <kbd>Enter</kbd> to confirm · <kbd>↑</kbd><kbd>↓</kbd> size · <kbd>V</kbd> camera · <kbd>Esc</kbd> cancel</p>
+    <button class="secondary" id="btnNewGame">Leave table and start over</button>
+  </div>
+</div>
+
+<div class="overlay" id="historyScreen" hidden>
+  <div class="sheet">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Hand history</h2>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<div class="overlay pop" id="chatScreen" hidden>
+  <div class="sheet talksheet">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <h2>Table</h2>
+    <div class="tabs" id="talkTabs" role="tablist"><button data-tab="talk" class="on">Talk</button><button data-tab="react">React</button><button data-tab="bets">Bets</button><button data-tab="bar">Bar</button><button data-tab="dealer">Dealer</button></div>
+    <div class="pane" data-pane="talk">
+      <div class="talk-h">Say</div>
+      <div class="chatgrid" id="chatGrid"></div>
+      <div class="talk-h">Taunt a player</div>
+      <div class="chatgrid talk2" id="tauntGrid"></div>
+      <p class="talk-note" id="tauntNote"></p>
+    </div>
+    <div class="pane" data-pane="react" hidden>
+      <div class="chatgrid talk2" id="reactGrid"></div>
+      <p class="talk-note" id="reactNote"></p>
+    </div>
+    <div class="pane" data-pane="bets" hidden>
+      <div class="talk-h">Flop colour</div>
+      <div class="seg" id="sideSize"></div>
+      <div class="chatgrid talk3" id="sideGrid"></div>
+      <p class="talk-note" id="sideNote"></p>
+      <div class="talk-h">Bad-beat jackpot</div>
+      <div class="jackpot" id="jpBox"></div>
+      <p class="talk-note" id="jpNote"></p>
+    </div>
+    <div class="pane" data-pane="bar" hidden>
+      <div class="talk-h">Order for yourself</div>
+      <div class="chatgrid talk2" id="barGrid"></div>
+      <p class="talk-note" id="barNote"></p>
+      <div class="talk-h">Send a drink</div>
+      <div class="chatgrid talk2" id="sendGrid"></div>
+      <p class="talk-note" id="sendNote"></p>
+    </div>
+    <div class="pane" data-pane="dealer" hidden>
+      <div class="talk-h">Tip the dealer</div>
+      <div class="chatgrid talk2" id="tipGrid"></div>
+      <p class="talk-note" id="tipNote"></p>
+    </div>
+  </div>
+</div>
+
+<div class="overlay end" id="endScreen" hidden>
+  <div class="sheet" style="text-align:center">
+    <div class="opt-label" id="endKicker" style="text-align:center;margin-top:0">Sit &amp; Go</div>
+    <div class="big" id="endTitle">Champion</div>
+    <p id="endText"></p>
+    <div class="prize" id="endPrize" hidden></div>
+    <div class="stats" id="endStats" style="margin-top:16px"></div>
+    <button class="primary" id="endPrimary">Play again</button>
+    <button class="secondary" id="endSecondary">Back to lobby</button>
+  </div>
+</div>
+
+<div class="overlay pop" id="playerPop" hidden>
+  <div class="sheet">
+    <button class="close-x" data-close aria-label="Close">×</button>
+    <div class="mono-big" id="popMono"></div>
+    <h2 id="popName">Viktor</h2>
+    <div class="style" id="popStyle">The Rock</div>
+    <p class="desc" id="popDesc"></p>
+    <div class="read" id="popRead"></div>
+    <div class="read" id="popRival"></div>
+    <div class="stats" id="popStats"></div>
+  </div>
+</div>
+
+<script>
+/* Shows a helpful message if the 3D engine cannot load (missing files, no WebGL). */
+setTimeout(function () {
+  if (!window.__velvetBooted) {
+    var m = document.getElementById('loadMsg');
+    if (m) m.textContent = location.protocol === 'file:'
+      ? 'Open the game through start-game.bat (or any local web server) instead of double-clicking index.html.'
+      : 'The 3D table could not load. Reload this page to try again.';
+    var s = document.querySelector('#loading .spin'); if (s) s.style.display = 'none';
+  }
+}, 15000);
+</script>
+
+<script type="module" src="js/00-three.js"></script>
+<script defer src="js/01-core.js"></script>
+<script defer src="js/02-audio.js"></script>
+<script defer src="js/03-fx.js"></script>
+<script defer src="js/04-personas.js"></script>
+<script defer src="js/05-state.js"></script>
+<script defer src="js/06-engine3d.js"></script>
+<script defer src="js/07-people.js"></script>
+<script defer src="js/08-tricks.js"></script>
+<script defer src="js/09-career.js"></script>
+<script defer src="js/10-bar.js"></script>
+<script defer src="js/11-stage1.js"></script>
+<script defer src="js/12-casino.js"></script>
+<script defer src="js/13-talk-act.js"></script>
+<script defer src="js/14-render.js"></script>
+<script defer src="js/15-hud.js"></script>
+<script defer src="js/16-ai.js"></script>
+<script defer src="js/17-flow.js"></script>
+<script defer src="js/18-overlays.js"></script>
+<script defer src="js/19-boot.js"></script>
+</body>
+</html>

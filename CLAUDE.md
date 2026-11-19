@@ -1,0 +1,150 @@
+# Velvet Hold'em — notes for Claude Code
+
+A realistic 3D Texas Hold'em game in the browser, plus blackjack and roulette.
+It started as a claude.ai artifact, moved to Claude Code on 2026-11-19, and on
+the same day became an installable web app (PWA) in `C:\Users\User\velvet-holdem`.
+
+- The old copy in `Documents\velvet-holdem` is a backup only. Windows
+  "Controlled folder access" is on, and it blocks Python, PowerShell and other
+  tools from creating files inside Documents. Do not move the project back there.
+- Git and Node are not installed. There is no build step.
+
+## Run it
+
+- Windows: double-click `start-game.bat`. It serves the folder at
+  http://localhost:8000 and opens the browser.
+- Any OS: `python -m http.server 8000` in this folder, then open http://localhost:8000.
+- Opening `index.html` straight from disk does **not** work any more: module
+  scripts do not load on `file://`. The loading screen says so.
+- Everything is local: three.js 0.169 is in `vendor/three/`, the fonts in
+  `fonts/`. Playing needs no internet.
+
+## How the code is split (read this before adding code)
+
+`index.html` holds the markup only. The game code is in `js/`, loaded in this order:
+
+1. `js/00-three.js` is an ES module. It imports three.js through the importmap
+   in `index.html` and sets `window.THREE` and `window.RoomEnvironment`.
+2. `js/01-core.js` … `js/19-boot.js` are **classic `defer` scripts**, each starting
+   with `'use strict'`. Module and deferred scripts run in document order, so
+   THREE exists before `01` runs.
+
+The classic scripts share **one global scope**, the same as when they were one
+module, which is why `RUN++` or `S` work across files. What changed:
+
+- Function declarations are hoisted only inside their own file. Code that runs
+  at load time (top level, not inside a function or callback) can only use
+  things from the same or an earlier file. Calls inside functions and event
+  handlers can use anything.
+- Every top-level name must be unique across all files. Never use `top`,
+  `window`, `document` or `location` as top-level names (a syntax error in
+  classic scripts).
+- A new file needs a `<script defer src>` tag in `index.html` **and** an entry in
+  `sw.js` (the `JS` list). Then bump `VERSION` in `sw.js`.
+
+| File | Section | What lives there |
+|---|---|---|
+| `css/style.css` | Styles | Layout, top bar, seats, dock, overlays, `.actpop` (tap menu). |
+| `css/fonts.css` | Fonts | Self-hosted Limelight, Barlow Condensed, Source Serif 4 (latin). |
+| `01-core.js` | Utilities, cards | `$`, `sleep`, `clamp`, `rand`, `pick`, `fmt`; `evaluate`, `handName`, equity. |
+| `02-audio.js` | Sound, music, voice | `Sound` (Web Audio), `Music` (generated jazz), `Voice` (device speech fallback). |
+| `03-fx.js` | Particles | `FX`: sparks and confetti on a 2D canvas. |
+| `04-personas.js` | Players | `PERSONAS`, `LINES`, `HERO_PHRASES`, `Rivals`, `VOICE_DATA` + `VO` (recorded clips). |
+| `05-state.js` | State | `S` (all game state), `settings`, `RUN`, `ABORT`, `delay`, `spd`. |
+| `06-engine3d.js` | 3D engine | Scene, camera fit, table (`G`), cards, chips, `animate`, `HeadFire`. |
+| `07-people.js` | 3D people | `Person` (body, face, IK arms, gestures), dealer, waitress, seat labels. |
+| `08-tricks.js` | Table tricks | Anger, `taunt`, `tipDealer`, AI bribes, the rig. |
+| `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Achv`, `Daily`, bounties, lobby. |
+| `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`. |
+| `11-stage1.js` | Stage 1 | Tilt, celebrations, `heroTap`, `heroThrow`, slow-roll, side bets, `Jackpot`. |
+| `12-casino.js` | Stage 4 | `Casino` (own scene/camera), `BJ` blackjack, `RL` roulette. |
+| `13-talk-act.js` | Talk & tap | Table-talk sheet; `Act` tap-a-person popover. |
+| `14-render.js` | Render loop | `layout()`, `frame(now)` (hands off to `Casino.frame` in the casino). |
+| `15-hud.js` | HUD | Seats, table talk, tournament clock, top bar, hero dock, `heroAct`. |
+| `16-ai.js` | AI, pots | Decisions, reads, timing tells; `buildPots`. |
+| `17-flow.js` | Game flow | `newGame`, `gameLoop`, `playHand`, `bettingRound`, `takeTurn`, `showdown`, `afterHand`. |
+| `18-overlays.js` | Overlays | `openOverlay`, `closeOverlay`, menus. |
+| `19-boot.js` | Persistence, boot | `SET_KEY`, `SAVE_KEY`; start-up; service-worker registration; `window.__velvet` test hook. |
+
+Other files: `voice/*.mp3` (recorded voices; `VOICE_DATA` has every clip's
+start/end), `icons/`, `manifest.webmanifest`, `sw.js` (offline cache: code is
+network-first, everything else cache-first), `tools/voice/` (how the voices
+were made; reference only).
+
+`window.claude?.hot` in `19-boot.js` is the old artifact hot-reload hook. It does
+nothing here.
+
+## Rules the code relies on
+
+- **Chips must balance.** In a Sit & Go, between hands:
+  `sum(player chips) + S.pot + S.tips + S.house + S.bar` = starting total (7,500).
+  Chip amounts are multiples of 5 and never negative.
+- **Long actions check `RUN`.** Async work captures `const run = RUN` and
+  stops if it changed, so an old hand never touches a new game.
+- **The table must never stop.** `gameLoop` treats any error other than
+  `ABORT` as a misdeal: it logs it, returns the chips and deals the next hand.
+  (A crash in the showdown "throw cards" code used to freeze the table.)
+- **`S.test = true`** (set by the tests) skips rendering, sound, music and
+  voices, and lets the AI play every seat.
+- **Saved data in localStorage:** `velvet3d-settings-v1`, `velvet3d-save-v2`,
+  `velvet3d-rivals-v1`, `velvet3d-career-v1`, `velvet3d-hint-act`. Bump the
+  version in a key if you change its shape. Saves are per web address, so the
+  hosted app does not see saves from the claude.ai artifact or from localhost.
+- **Seating:** 2 opponents on the left, 2 on the right, nobody next to the
+  dealer, the hero at the near side. The camera fit keeps every head on screen.
+
+## Test it
+
+```
+pip install playwright
+python -m playwright install chromium
+cd tests
+python run_all.py           # every test, with a summary at the end
+python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 80 cash hands, chips balance
+```
+
+| Test | Checks |
+|---|---|
+| `selfplay3d.py` | Main regression. Must print `viol: []` for every game and no page errors. |
+| `selfplay_ko.py` | Same for bounty Sit & Gos. |
+| `pwa.py` | Manifest and icons load, the service worker caches the game, the table starts offline. |
+| `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
+| `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
+| `stage1.py`, `stage2s.py`, `stage3.py` | Side bets and reactions; the waitress; career lobby. |
+| `angertest.py`, `tricks.py` | Anger, flames, tips. |
+| `seats2.py` | Seat layout on several screen sizes. |
+
+Tests serve the folder on a local port. Software WebGL is very slow; on this PC
+set `VELVET_GPU=1` (PowerShell: `$env:VELVET_GPU="1"`) to use the graphics card.
+The game skips service-worker registration under test automation
+(`navigator.webdriver`); `pwa.py` registers it by hand.
+
+## Working with this user
+
+- Explain in plain, simple language and keep updates short.
+- Guide them one question at a time.
+- They play on an iPhone and on a Windows PC. Check every visual change on
+  both a phone size (393×730) and a desktop size (1280×760), with screenshots.
+- Run `selfplay3d.py` (or `run_all.py`) before calling a change done.
+
+## Where it lives
+
+- Not hosted yet. The plan is free static hosting (for example GitHub Pages),
+  so the user can open a link on the iPhone and use "Add to Home Screen".
+- The old claude.ai artifact "Velvet Hold'em"
+  (https://claude.ai/artifact/4pxB58D35P128yb7xXy2GW) is the single-file version
+  from before the split. It is not updated any more.
+
+## Upgrade plan (agreed order, not started)
+
+1. Calendar that runs while you play (the base for the bank and jail).
+2. Bank: loans offered from your play style and history, interest, repayment in the
+   first week of each month; deposits where a higher rate locks the money longer.
+3. Drinks with effects: a buzz meter (a small boost), drunk mistakes for AI and
+   hero, opponents can send the hero a drink to accept or refuse.
+4. Bribes and police: higher bribe acceptance, a heat meter, a patrolling cop,
+   an arrest animation, jail (pay bail or win a game against the cops).
+5. UI/UX: city-map menu, an in-game phone (calendar, bank, messages), livelier
+   characters, cinematic all-in and river moments, day/night lighting.
+6. Voices last (ElevenLabs, about 14,600 credits): write and approve the lines
+   first, count characters, then record the most-heard lines first.

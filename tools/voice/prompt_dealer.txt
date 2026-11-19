@@ -1,0 +1,109 @@
+[professional] Shuffle up and deal.
+
+[long pause]
+
+[politely] Action is on you.
+
+[long pause]
+
+[firm] All in.
+
+[long pause]
+
+[firm] You're all in.
+
+[long pause]
+
+[calm] All in, and a call. Cards up, please.
+
+[long pause]
+
+[warmly] You win the pot.
+
+[long pause]
+
+[warmly] Nice hand. The pot is yours.
+
+[long pause]
+
+[professional] The pot goes to the winner.
+
+[long pause]
+
+[professional] Split pot.
+
+[long pause]
+
+[professional] High card wins.
+
+[long pause]
+
+[professional] Pair wins.
+
+[long pause]
+
+[professional] Two pair wins.
+
+[long pause]
+
+[professional] Three of a kind wins.
+
+[long pause]
+
+[professional] Straight wins.
+
+[long pause]
+
+[professional] Flush wins.
+
+[long pause]
+
+[professional] Full house wins.
+
+[long pause]
+
+[surprised] Four of a kind!
+
+[long pause]
+
+[excited] Straight flush!
+
+[long pause]
+
+[excited] A royal flush!
+
+[long pause]
+
+[professional] Blinds are going up.
+
+[long pause]
+
+[professional] Antes are now in play.
+
+[long pause]
+
+[professional] A player has been eliminated.
+
+[long pause]
+
+[professional] We're on the money bubble.
+
+[long pause]
+
+[pleased] Everyone left is in the money.
+
+[long pause]
+
+[professional] We're heads up.
+
+[long pause]
+
+[excited] Congratulations! You win the tournament!
+
+[long pause]
+
+[professional] We have a champion.
+
+[long pause]
+
+[politely] Dealer voice is on.
