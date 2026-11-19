@@ -138,7 +138,8 @@ const Bar = {
     if (d && p && !p.out && d.level < 0.12 && !this.queue.some(q => q.i === i) && !(this.job && this.job.i === i)) {
       const angry = isAngry(p);
       sayExtra(p, angry ? 'orderAngry' : 'order', 300);
-      this.order(i, angry && p.persona !== 'pro' ? 'whisky' : FAV_DRINK[p.persona] || 'water');
+      const type = angry && p.persona !== 'pro' ? 'whisky' : FAV_DRINK[p.persona] || 'water';
+      this.order(i, type, { done: () => { if (S.players[i] === p && !p.out) drinkUp(p, type); } });
     }
   },
   /* ---- the waitress walks an oval outside the chairs, never across your side of the room ---- */
@@ -212,6 +213,7 @@ function heroOrder(type) {
   toast(`${DRINKS[type].label} on its way`, 1600); Sound.chips(1, 0.4);
   Bar.order(0, type, { done: () => {
     if (isAngry(h) && Math.random() < 0.6) { calmDown(h); toast('You cool off.', 1600); }
+    drinkUp(h, type);
     Achv.ev('drink', { type });
   } });
 }
@@ -222,6 +224,7 @@ function sendDrink(p) {
   const type = FAV_DRINK[p.persona] || 'whisky';
   Bar.order(p.i, type, { done: () => {
     if (p.out) return;
+    drinkUp(p, type);
     Rivals.bump(p.persona, 'grudge', -1); updateRivalBadges();
     const wasAngry = isAngry(p);
     if (wasAngry && Math.random() < 0.65) { calmDown(p); toast(`${p.name} cools off`, 1800); }
@@ -230,3 +233,118 @@ function sendDrink(p) {
     Achv.ev('sendDrink', { calmed: wasAngry && !isAngry(p) });
   } });
 }
+
+/* =========================================================
+   Buzz: a drink or two helps, too many hurt.
+   p.buzz rises with each drink delivered (ALCOHOL) and falls by BUZZ.decay every hand.
+   Stage 1 Buzzed: sometimes a luckier deal. Stage 2 Tipsy: a little luck, some mistakes.
+   Stage 3 Drunk: no luck, many mistakes (fold good hands, wild raises, call anything).
+   ========================================================= */
+const ALCOHOL = { whisky: 1.2, martini: 1, beer: 0.8, mocktail: -0.6, water: -0.6 };
+const BUZZ = { decay: 0.3, max: 6, at: [0, 0.8, 2.4, 3.8] };
+const BUZZ_NAME = ['Sober', 'Buzzed', 'Tipsy', 'Drunk'];
+const BUZZ_LUCK = [0, 0.22, 0.1, 0];      // chance per hand of the luckier deal
+const BUZZ_SLIP = [0, 0, 0.1, 0.3];       // chance a decision goes wrong
+Object.assign(EXTRA_LINES.maniac,  { drinkOffer: ['Drinks on me! You look thirsty.', 'Loosen up, pal. Have one on me!'], refused: ['Your loss, buddy!', 'Boring!'], drunk: ['I feel GREAT! All in!', 'Who dealt this? ...Me? No.'] });
+Object.assign(EXTRA_LINES.shark,   { drinkOffer: ['Have a drink. You seem tense.', 'Relax. This one is on me.'], refused: ['Suit yourself.', 'Smart. Maybe.'], drunk: ['I am perfectly... fine.', 'The cards are moving.'] });
+Object.assign(EXTRA_LINES.rock,    { drinkOffer: ['Let me buy you one, partner.'], refused: ['Fair enough.'], drunk: ['Might have had one too many.', 'Room is spinning a bit.'] });
+Object.assign(EXTRA_LINES.station, { drinkOffer: ['Ooh, let me buy you a drink!', "You should try one, they're yummy!"], refused: ['Aww, okay!', 'More for me!'], drunk: ['Wheee! I love everyone!', 'Is it my turn? Is it?'] });
+Object.assign(EXTRA_LINES.pro,     { drinkOffer: ['Can I get you something?'], refused: ['No problem.'], drunk: ['Should not have had that.'] });
+Object.assign(CAT_FACE, { drinkOffer: 'happy', refused: 'annoyed', drunk: 'happy' });
+
+function buzzStage(p) { const b = (p && p.buzz) || 0; return b >= BUZZ.at[3] ? 3 : b >= BUZZ.at[2] ? 2 : b >= BUZZ.at[1] ? 1 : 0; }
+function drinkUp(p, type) {
+  if (!p || p.out) return;
+  const before = buzzStage(p);
+  p.buzz = clamp((p.buzz || 0) + (ALCOHOL[type] ?? 0.8), 0, BUZZ.max);
+  const after = buzzStage(p); renderBuzz(p.i);
+  if (S.test || after === before) return;
+  if (p.isHero) {
+    if (after > before) toast(['', 'You feel good. Lady Luck is smiling.', "You're getting tipsy. Careful now.", "You're drunk! Your hands are not listening."][after], 3000);
+    else toast(after ? `Clearer head: ${BUZZ_NAME[after].toLowerCase()} now` : 'You feel sober again', 2200);
+  } else if (after === 3) { toast(`${p.name} is drunk`, 2200); sayExtra(p, 'drunk', 600); }
+}
+function buzzTick() { for (const p of S.players) if (p && p.buzz) { p.buzz = Math.max(0, p.buzz - BUZZ.decay); renderBuzz(p.i); } }
+function renderBuzz(i) {
+  const p = S.players[i], el = seatEls[i] && seatEls[i].querySelector('.buzzb'), st = p && !p.out ? buzzStage(p) : 0;
+  if (el) { el.hidden = !st; el.className = 'buzzb s' + st; el.textContent = BUZZ_NAME[st]; }
+  if (people[i]) people[i].drunk = st >= 2 ? st - 1 : 0;
+  if (i === 0) { stageEl.classList.toggle('tipsy', st === 2 && !S.test); stageEl.classList.toggle('drunk', st === 3 && !S.test); }
+}
+/* A buzzed player sometimes gets the best of three random two-card hands. The deck stays a full shuffle:
+   only cards swap places. Dealing pops from the end, so seat k's cards sit at L-1-k and L-1-n-k. */
+function applyBuzzLuck(dealt, skip = -1) {
+  const lucky = dealt.filter(i => i !== skip && Math.random() < BUZZ_LUCK[buzzStage(S.players[i])]);
+  if (!lucky.length) return -1;
+  const who = pick(lucky), k = dealt.indexOf(who), deck = S.deck, L = deck.length, n = dealt.length;
+  const pa = L - 1 - k, pb = L - 1 - n - k;
+  let best = [deck[pa], deck[pb]], bestS = CHEN[best[0] * 52 + best[1]];
+  for (let t = 0; t < 2; t++) {
+    const x = (Math.random() * L) | 0, y = (Math.random() * L) | 0; if (x === y) continue;
+    const s = CHEN[deck[x] * 52 + deck[y]]; if (s > bestS) { bestS = s; best = [deck[x], deck[y]]; }
+  }
+  const put = (pos, card) => { const j = deck.indexOf(card); [deck[pos], deck[j]] = [deck[j], deck[pos]]; };
+  put(pa, best[0]); put(pb, best[1]);
+  return who;
+}
+/* Drunk decisions */
+function drunkAdjust(p, a) {
+  const st = buzzStage(p); if (Math.random() >= BUZZ_SLIP[st]) return a;
+  const toCall = Math.max(0, S.currentBet - p.bet), cr = canRaise(p), strong = !!(p._info && p._info.str > 0.55), r = Math.random();
+  let b;
+  if (strong && toCall > 0 && r < 0.4) b = A_('fold');
+  else if (cr && r < 0.75) b = A_('raise', S.currentBet + Math.max(S.minRaise, (S.pot + sumBets()) * rand(0.8, 1.6)));
+  else b = toCall > 0 ? A_('call') : A_('check');
+  if (b.type !== a.type && !S.test && Math.random() < 0.5) setTimeout(() => showBubble(p.i, pick(['*hic*', '*sways*', 'Whoops.'])), 200);
+  return b;
+}
+function drunkHero(a) {
+  const h = S.players[0], st = buzzStage(h); if (!a || Math.random() >= BUZZ_SLIP[st]) return a;
+  const toCall = Math.max(0, S.currentBet - h.bet), cr = canRaise(h), r = Math.random();
+  let b = a;
+  if ((a.type === 'call' || a.type === 'check') && cr && r < 0.55) b = { type: 'raise', to: S.currentBet + S.minRaise };
+  else if (a.type === 'call' && r < 0.8) b = { type: 'fold' };
+  else if (a.type === 'fold' && toCall > 0) b = { type: 'call' };
+  else if (a.type === 'raise') b = { type: toCall > 0 ? 'call' : 'check' };
+  if (b !== a && !S.test) {
+    showBubble(0, '*hic*');
+    toast(`Your hand slipped: ${b.type === 'raise' ? 'you raised' : b.type === 'fold' ? 'you folded' : b.type === 'call' ? 'you called' : 'you checked'}`, 2600);
+  }
+  return b;
+}
+
+/* ---------- An opponent offers you a drink: accept or refuse ---------- */
+const offerEl = document.createElement('div'); offerEl.className = 'drinkoffer'; offerEl.hidden = true; stageEl.appendChild(offerEl);
+const DrinkOffer = {
+  cur: null,
+  maybe() { // between hands, now and then
+    if (S.test || this.cur || !S.started) return;
+    const h = S.players[0], cost = drinkPrice(); if (!h || h.out) return;
+    const cands = S.players.filter(p => !p.isHero && !p.out && p.chips > cost * 4);
+    if (!cands.length || Math.random() > 0.06) return;
+    const p = pick(cands); this.show(p, FAV_DRINK[p.persona] === 'water' ? 'martini' : (FAV_DRINK[p.persona] || 'whisky'));
+  },
+  show(p, type) {
+    if (this.cur) return;
+    const run = RUN; this.cur = { p, type, run };
+    offerEl.innerHTML = `<p><b>${escH(p.name)}</b> wants to buy you a <b>${DRINKS[type].label.toLowerCase()}</b>.</p><div><button class="ok">Accept</button><button class="no">No thanks</button></div><i class="tm"></i>`;
+    offerEl.hidden = false; offerEl.classList.remove('show'); void offerEl.offsetWidth; offerEl.classList.add('show');
+    offerEl.querySelector('.ok').onclick = () => this.answer(true);
+    offerEl.querySelector('.no').onclick = () => this.answer(false);
+    sayExtra(p, 'drinkOffer'); Sound.pop();
+    clearTimeout(this._t); this._t = setTimeout(() => this.answer(false, true), 12000);
+  },
+  answer(yes, timedOut) {
+    const c = this.cur; if (!c) return; this.cur = null; clearTimeout(this._t);
+    offerEl.classList.remove('show'); setTimeout(() => { if (!this.cur) offerEl.hidden = true; }, 300);
+    const { p, type, run } = c, h = S.players[0], cost = drinkPrice();
+    if (run !== RUN || p.out || h.out || S.players[p.i] !== p) return;
+    if (!yes) { if (!timedOut) { sayExtra(p, 'refused', 200); showBubble(0, 'No thanks.'); } return; }
+    if (p.chips <= cost) return;
+    p.chips -= cost; S.bar = (S.bar || 0) + cost; renderSeat(p.i); // they pay
+    showBubble(0, 'Cheers!'); Sound.chips(1, 0.4);
+    Rivals.bump(p.persona, 'grudge', -1); updateRivalBadges();
+    Bar.order(0, type, { done: () => { drinkUp(h, type); if (isAngry(h) && Math.random() < 0.5) { calmDown(h); toast('You cool off.', 1600); } } });
+  },
+  clear() { this.cur = null; clearTimeout(this._t); offerEl.hidden = true; offerEl.classList.remove('show'); },
+};

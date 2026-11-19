@@ -206,6 +206,12 @@ class Person {
       const k = (t - g.t0) / g.dur;
       if (k >= 1) { this.gest = null; } else { const fn = GESTURES[g.name]; if (fn) fn(k, P, _H, face, this, g); }
     }
+    if (this.drunk) { // tipsy (1) or drunk (2): a slow sway and a lolling head
+      const d = this.drunk, s = this.seed || 0;
+      P.twist += Math.sin(t * 0.9 + s) * 0.07 * d; P.lean += Math.sin(t * 0.6 + s * 2) * 0.04 * d;
+      P.hr += Math.sin(t * 1.1 + s) * 0.09 * d; P.hp += 0.04 * d;
+      if (d > 1 && face.squint == null) face.squint = 0.45;
+    }
     const fast = g && g.snap;
     const a = 1 - Math.exp(-dt * (fast ? 13 : 6.5)), ah = 1 - Math.exp(-dt * (fast ? 20 : 9));
     for (const key of ['lean', 'twist', 'hy', 'hp', 'hr']) this.cur[key] += (P[key] - this.cur[key]) * a;
@@ -550,8 +556,8 @@ const seatEls = [], betLbls = [], headEls = [];
 for (let i = 0; i < NS; i++) {
   const s = document.createElement('div'); s.className = 'seat' + (i === 0 ? ' hero' : ''); s.dataset.i = i;
   s.innerHTML = i === 0
-    ? `<div class="flames" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bubble"></div><div class="plate"><div class="nm"></div><div class="stk"></div></div><div class="bty" hidden></div><div class="tag"></div><div class="eqb"></div>`
-    : `<div class="plate"><div class="nm"></div><div class="stk"></div><i class="tbar"></i></div><div class="fume" aria-hidden="true">Fuming</div><div class="rivb" aria-hidden="true">Rival</div><div class="bty" hidden></div><div class="eqb"></div>`;
+    ? `<div class="flames" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bubble"></div><div class="plate"><div class="nm"></div><div class="stk"></div></div><div class="bty" hidden></div><div class="buzzb" hidden></div><div class="tag"></div><div class="eqb"></div>`
+    : `<div class="plate"><div class="nm"></div><div class="stk"></div><i class="tbar"></i></div><div class="fume" aria-hidden="true">Fuming</div><div class="rivb" aria-hidden="true">Rival</div><div class="bty" hidden></div><div class="buzzb" hidden></div><div class="eqb"></div>`;
   s.querySelector('.plate').addEventListener('click', e => { e.stopPropagation(); if (typeof plateTap === 'function') plateTap(i, e.currentTarget); else openPlayer(i); });
   overlayEl.appendChild(s); seatEls.push(s);
   const h = document.createElement('div'); h.className = 'head';

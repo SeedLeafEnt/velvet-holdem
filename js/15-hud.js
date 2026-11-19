@@ -13,6 +13,7 @@ function renderSeat(i) {
   el.classList.toggle('out', p.out);
   el.classList.toggle('folded', S.inHand && !p.out && p.folded);
   setPile('stack' + i, p.out ? 0 : p.chips);
+  renderBuzz(i);
 }
 function renderBet(i) {
   const p = S.players[i], l = betLbls[i];
@@ -255,6 +256,7 @@ function renderDockRaiseLabel() {
 }
 function heroAct(a) {
   if (!S.heroResolve) return;
+  a = drunkHero(a); // when tipsy or drunk your hand sometimes slips
   const r = S.heroResolve; S.heroResolve = null; S.heroReject = null; S.raising = false;
   clearTimeout(heroTurn._slow); clearTimeout(heroTurn._dealer);
   renderDock(); r(a);

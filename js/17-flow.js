@@ -23,7 +23,7 @@ function newGame(mode, level, restore, structure, opts) {
   if (S.heroReject) { const rj = S.heroReject; S.heroResolve = S.heroReject = null; try { rj(ABORT); } catch (e) {} }
   clearTimeout(heroTurn._slow);
   resetTableVisuals(); FX.parts = []; Voice.stop();
-  clearAnger(); S.sideFlop = null; S.house = 0; S.bar = 0; S.heroSlowRoll = -1; S.koCount = 0; S.koWon = 0;
+  clearAnger(); DrinkOffer.clear(); S.sideFlop = null; S.house = 0; S.bar = 0; S.heroSlowRoll = -1; S.koCount = 0; S.koWon = 0;
   if (opts) S.ko = opts.ko || 0; else if (restore) S.ko = restore.ko || 0;
   if (restore) { S.career = restore.career || null; BUYIN = S.career ? S.career.buyin : 20; applyTheme(S.career ? roomById(S.career.room) : null); }
   Object.assign(S, { mode, level, board: [], pot: 0, currentBet: 0, frc: 0, inHand: false, betweenHands: true, toAct: -1, pre: null, raising: false, runout: false, started: true, log: [], tips: 0, rig: null, bribedHand: -1 });
@@ -124,7 +124,7 @@ async function playHand() {
     if (!p.folded) { p.startStack = p.chips; p.st.hands++; }
   }
   const hero = S.players[0]; if (!hero.out) { S.stats.hands++; Achv.ev('hand'); }
-  angerTick();
+  angerTick(); buzzTick();
   seatEls.forEach(e => e.classList.remove('winner')); clearTags(); for (let i = 0; i < NS; i++) setEq(i, null);
   applySpeedVar(); renderSeats(); renderPot(); renderTop(); renderDock();
 
@@ -212,7 +212,9 @@ const chipCount = amt => clamp(Math.round(Math.log2(amt / S.bb + 1) * 2.4), 2, 1
 async function dealHole() {
   const order = seatOrderFrom(S.sbI).filter(i => isActiveSeat(i) || (S.players[i].allIn && !S.players[i].out && S.players[i].total > 0));
   const dealt = order.filter(i => !S.players[i].folded);
+  const rigI = S.rig ? S.rig.i : -1;
   applyRigHole(dealt);
+  applyBuzzLuck(dealt, rigI); // a buzzed player may get a luckier deal
   if (dealerP && !S.test) dealerP.holding = true;
   for (const i of dealt) if (people[i]) people[i].look = A.seats[i].card.clone();
   for (let round = 0; round < 2; round++) {
@@ -653,6 +655,7 @@ async function afterHand() {
     }
   }
   if (Math.random() < 0.12) { const b = shuffled(S.players.filter(p => !p.isHero && !p.out))[0]; if (b) Chat.say(b, 'idle', { prob: 1 }); }
+  DrinkOffer.maybe();
   renderTop(); renderDock();
   snapshotBetween();
   return true;

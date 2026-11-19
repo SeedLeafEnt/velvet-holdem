@@ -58,7 +58,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `08-tricks.js` | Table tricks | Anger, `taunt`, `tipDealer`, AI bribes, the rig. |
 | `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Cal` (game calendar), `Achv`, `Daily`, bounties, lobby. |
 | `09b-bank.js` | Bank | `Bank`: credit score, play style, loans, savings, the lobby's Bank tab. |
-| `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`. |
+| `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`; buzz (`drinkUp`, `applyBuzzLuck`, `drunkAdjust`, `drunkHero`), `DrinkOffer`. |
 | `11-stage1.js` | Stage 1 | Tilt, celebrations, `heroTap`, `heroThrow`, slow-roll, side bets, `Jackpot`. |
 | `12-casino.js` | Stage 4 | `Casino` (own scene/camera), `BJ` blackjack, `RL` roulette. |
 | `13-talk-act.js` | Talk & tap | Table-talk sheet; `Act` tap-a-person popover. |
@@ -112,6 +112,7 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 | `selfplay_ko.py` | Same for bounty Sit & Gos. |
 | `pwa.py` | Manifest and icons load, the service worker caches the game, the table starts offline. |
 | `gamecal.py 0` / `gamecal.py 1` | Calendar: date maths, day/week/month events, 4 h per hand, 2 h per casino round (phone / desktop). |
+| `drinks.py 0` / `drinks.py 1` | Drinks: buzz stages, luck rate and deck integrity, drunk mistakes, drink offers (they pay, refuse is free), chips balance; screenshots. |
 | `bank.py 0` / `bank.py 1` | Bank: score, offer, borrow, interest due in week 1, on-time and missed payments, savings, early withdrawal; screenshots. |
 | `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
 | `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
@@ -181,12 +182,27 @@ The game skips service-worker registration under test automation
 - The career chip on the table shows "Bank due $X" in red while a payment is due,
   and the lobby's Bank tab gets a red dot.
 
+## Drinks and buzz (end of `10-bar.js`)
+
+- `p.buzz` (0–6) goes up when a drink is delivered (`drinkUp`, `ALCOHOL`: whisky 1.2,
+  martini 1, beer 0.8, mocktail and water −0.6) and down 0.3 every hand (`buzzTick` in
+  `playHand`). Stages (`buzzStage`): Buzzed ≥ 0.8, Tipsy ≥ 2.4, Drunk ≥ 3.8.
+- Luck (`applyBuzzLuck` in `dealHole`, after the dealer's rig): chance per hand
+  `BUZZ_LUCK` = 22% buzzed, 10% tipsy, 0 drunk, to get the best of three random two-card
+  hands. Only cards swap places, so the deck stays a full shuffle.
+- Mistakes (`BUZZ_SLIP`: 10% tipsy, 30% drunk): `drunkAdjust` wraps `aiDecide`
+  (fold a strong hand, wild raise, call anything); `drunkHero` wraps `heroAct`
+  (your button "slips"; a toast says what happened). Preset actions are not affected.
+- Looks: a badge under each name plate (`.buzzb`), opponents sway (`Person.drunk`),
+  and when you are tipsy or drunk the 3D view sways (`#stage.tipsy` / `#stage.drunk`).
+- `DrinkOffer`: between hands (6% a hand) an opponent offers you a drink; Accept or
+  No thanks (12 s, then it lapses). They pay (`S.bar`), so chips still balance.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).
 2. ~~Bank: loans, interest due in the first week, savings with a chosen rate~~ — done (see above).
-3. Drinks with effects: a buzz meter (a small boost), drunk mistakes for AI and
-   hero, opponents can send the hero a drink to accept or refuse.
+3. ~~Drinks with effects: buzz, luck, drunk mistakes, drink offers~~ — done (see above).
 4. Bribes and police: higher bribe acceptance, a heat meter, a patrolling cop,
    an arrest animation, jail (pay bail or win a game against the cops).
 5. UI/UX: city-map menu, an in-game phone (calendar, bank, messages), livelier

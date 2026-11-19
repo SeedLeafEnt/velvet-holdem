@@ -33,7 +33,7 @@ function oppFilter(q) {
 function aiDecide(p) {
   const toCall = Math.max(0, S.currentBet - p.bet);
   const cr = canRaise(p);
-  return tiltAdjust(p, rivalAdjust(p, S.board.length === 0 ? aiPreflop(p, toCall, cr) : aiPostflop(p, toCall, cr)));
+  return drunkAdjust(p, tiltAdjust(p, rivalAdjust(p, S.board.length === 0 ? aiPreflop(p, toCall, cr) : aiPostflop(p, toCall, cr))));
 }
 function aiPreflop(p, toCall, cr) {
   const Pp = P(p), bb = S.bb, sharp = S.level === 'sharp';
