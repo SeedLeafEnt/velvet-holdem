@@ -276,6 +276,24 @@ start screen is also used instead of the 3D city, so older tests can click `#btn
 - The patrolling officer stands in the gap between the dealer and the player to his right,
   a step back (`Police.beat`), so he never stands over a chair.
 
+## People and table details (`07-people.js`, `TFX.details` in `14-render.js`)
+
+- `Person` anatomy: tapered arms with elbow joints, hands built as a group (palm, four curled
+  fingers, a thumb toward the body; local +Y along the fingers, +Z toward the table), eyes as
+  groups (white, coloured iris, pupil, glint) with lash lines, a jaw, a nose tip, fuller lips,
+  hair with a strand bump map, rolled leather chair tops. `LOOKS` flags: `lapels`, `tie`,
+  `cuffs`, `necklace`, `apron`; dealers get gold waistcoat buttons and red arm garters
+  (placed each frame in `solveArm`). The waitress has shaped legs, heels and an apron, and
+  swings her free arm and sways while walking (`Bar.walk`).
+- `idleLife(dt)` in `updatePeople`: between their turns, players peek at their cards
+  (`peek`), riffle chips, think (chin on hand), lean back when folded (`relax`) or glance at
+  someone; the dealer squares the deck (`square`). Skipped when `S.test`.
+- Sipping: `Bar.sip` passes the glass position; the `sip` gesture reaches the glass, lifts it
+  to the mouth and puts it back, and `Bar.update` keeps the glass on the table until the hand
+  has it (20–80% of the gesture).
+- `TFX.details()` (rebuilt with the table layout): brass cup holders under every seat's drink,
+  and the dealer's chip tray.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).

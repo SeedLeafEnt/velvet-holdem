@@ -7,14 +7,14 @@
    ========================================================= */
 const HIP_Y = -0.24, UA = 0.27, FA = 0.26, SH_X = 0.165, SH_Y = 0.47;
 const LOOKS = {
-  rock:    { g: 'm', hair: 'none', hat: 'cowboy', beard: true, top: '#6b4a2e', top2: '#3c2a1c', hairCol: '#bdb6aa', hatCol: '#4a3423' },
-  shark:   { g: 'f', hair: 'long', shades: true, top: '#1d1f27', top2: '#ece7dd', hairCol: '#1b1412' },
+  rock:    { g: 'm', hair: 'none', hat: 'cowboy', beard: true, top: '#6b4a2e', top2: '#3c2a1c', hairCol: '#bdb6aa', hatCol: '#4a3423', lapels: true },
+  shark:   { g: 'f', hair: 'long', shades: true, top: '#1d1f27', top2: '#ece7dd', hairCol: '#1b1412', necklace: true },
   maniac:  { g: 'm', hair: 'short', cap: true, top: '#b8322a', top2: '#f2efe8', hairCol: '#2a1a10', hatCol: '#16181d' },
   station: { g: 'f', hair: 'bun', top: '#2a8f84', top2: '#f4e9d8', hairCol: '#7a3e1d' },
-  pro:     { g: 'm', hair: 'short', glasses: true, top: '#24324c', top2: '#dfe6ee', hairCol: '#2b2420' },
+  pro:     { g: 'm', hair: 'short', glasses: true, top: '#24324c', top2: '#dfe6ee', hairCol: '#2b2420', lapels: true, tie: '#7a1626', cuffs: true },
   dealer:  { g: 'm', hair: 'short', dealer: true, top: '#141418', top2: '#f4f4f2', hairCol: '#1d1714' },
-  waitress: { g: 'f', hair: 'bun', top: '#7a1630', top2: '#f4efe6', hairCol: '#2a1810', standing: true },
-  cop:      { g: 'm', hair: 'short', cap: true, badge: true, top: '#1f2f55', top2: '#dfe6f0', hairCol: '#2a1a10', hatCol: '#111a33' },
+  waitress: { g: 'f', hair: 'bun', top: '#7a1630', top2: '#f4efe6', hairCol: '#2a1810', standing: true, apron: true },
+  cop:      { g: 'm', hair: 'short', cap: true, badge: true, top: '#1f2f55', top2: '#dfe6f0', hairCol: '#2a1a10', hatCol: '#111a33', lapels: true, cuffs: true },
   copWalk:  { g: 'm', hair: 'short', cap: true, badge: true, top: '#1f2f55', top2: '#dfe6f0', hairCol: '#2a1a10', hatCol: '#111a33', standing: true, pants: '#18213b' },
 };
 const SKINS = ['#f2c9a8', '#e3b08a', '#c98f66', '#a46c47', '#7c4d30', '#f6dcc6'];
@@ -67,6 +67,20 @@ function initPeopleGeo() {
   const tri = new THREE.Shape(); tri.moveTo(-0.055, 0.11); tri.lineTo(0.055, 0.11); tri.lineTo(0, -0.13); tri.closePath();
   PGEO.shirtFront = new THREE.ShapeGeometry(tri);
   PGEO.chairBack = new THREE.BoxGeometry(0.46, 0.52, 0.07);
+  // finer anatomy: tapered arms with elbows, hands with fingers, eyes with irises, a jaw, lips with depth
+  PGEO.upperT = new THREE.CylinderGeometry(0.04, 0.05, UA, 14); PGEO.foreT = new THREE.CylinderGeometry(0.03, 0.039, FA, 14);
+  PGEO.joint = new THREE.SphereGeometry(0.04, 12, 10); PGEO.palm = new THREE.SphereGeometry(0.036, 14, 10);
+  PGEO.finger = new THREE.CapsuleGeometry(0.0085, 0.03, 4, 8); PGEO.thumb = new THREE.CapsuleGeometry(0.0095, 0.024, 4, 8);
+  PGEO.cuff = new THREE.CylinderGeometry(0.034, 0.034, 0.028, 16, 1, true); PGEO.band = new THREE.TorusGeometry(0.047, 0.008, 6, 18);
+  PGEO.iris = new THREE.CircleGeometry(0.0105, 20); PGEO.pupil2 = new THREE.CircleGeometry(0.0052, 14); PGEO.glint = new THREE.CircleGeometry(0.0024, 8);
+  PGEO.lash = new THREE.BoxGeometry(0.036, 0.0032, 0.004); PGEO.jaw = new THREE.SphereGeometry(0.08, 24, 16); PGEO.noseTip = new THREE.SphereGeometry(0.014, 12, 8);
+  PGEO.lip = new THREE.TorusGeometry(0.02, 0.0052, 6, 14, Math.PI * 0.7); PGEO.lipFlat = new THREE.BoxGeometry(0.034, 0.0068, 0.0065);
+  PGEO.button = new THREE.SphereGeometry(0.008, 8, 6); PGEO.roll = new THREE.CylinderGeometry(0.055, 0.055, 0.5, 16);
+  { const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.05, 0.13); s.lineTo(0.012, 0.15); s.closePath(); PGEO.lapel = new THREE.ShapeGeometry(s); }
+  PGEO.legF = new THREE.CylinderGeometry(0.03, 0.019, 0.94, 12); PGEO.heel = new THREE.CylinderGeometry(0.005, 0.004, 0.06, 6);
+  { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#808080'; x.fillRect(0, 0, 64, 256);
+    for (let i = 0; i < 90; i++) { x.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.35)'; x.fillRect(Math.random() * 64, 0, 1 + Math.random() * 1.5, 256); }
+    PGEO.hairTex = new THREE.CanvasTexture(c); PGEO.hairTex.wrapS = PGEO.hairTex.wrapT = THREE.RepeatWrapping; PGEO.hairTex.repeat.set(6, 1); }
   PGEO.chairSeat = new THREE.BoxGeometry(0.46, 0.08, 0.42);
 }
 const _Y = new THREE.Vector3(0, 1, 0);
@@ -87,14 +101,16 @@ class Person {
     const skin = isDealer ? '#e6b896' : SKINS[Math.floor(rr(1) * SKINS.length)];
     this.mats = [];
     const M = (col, rough = 0.8, extra = {}) => { const m = new THREE.MeshStandardMaterial(Object.assign({ color: col, roughness: rough, metalness: 0 }, extra)); this.mats.push(m); return m; };
-    const mSkin = M(skin, 0.58, { emissive: new THREE.Color(skin).multiplyScalar(0.14) }), mTop = M(L.top, 0.86), mTop2 = M(L.top2, 0.8), mHair = M(L.hairCol, 0.55);
-    const mDark = M('#121212', 0.35), mWhite = M('#f5f3ee', 0.3), mLeather = M('#2a1612', 0.55), mHat = M(L.hatCol || '#222', 0.7);
-    const mLips = M(new THREE.Color(skin).multiplyScalar(0.55).getStyle(), 0.6);
+    const mSkin = M(skin, 0.58, { emissive: new THREE.Color(skin).multiplyScalar(0.14) }), mTop = M(L.top, 0.86), mTop2 = M(L.top2, 0.8), mHair = M(L.hairCol, 0.5, { bumpMap: PGEO.hairTex, bumpScale: 0.8 });
+    const leatherBump = typeof TEX !== 'undefined' && TEX.leather ? { bumpMap: TEX.leather, bumpScale: 0.5 } : {};
+    const mDark = M('#121212', 0.35), mWhite = M('#f5f3ee', 0.3), mLeather = M('#2a1612', 0.5, leatherBump), mHat = M(L.hatCol || '#222', 0.7);
+    const mLips = M(L.g === 'f' ? new THREE.Color(skin).lerp(new THREE.Color('#a8303e'), 0.55).getStyle() : new THREE.Color(skin).multiplyScalar(0.55).getStyle(), 0.45);
     const mesh = (geo, mat, parent, x = 0, y = 0, z = 0, cast = true) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); o.castShadow = cast; parent.add(o); return o; };
     this.root = new THREE.Group();
     if (!L.standing) {
       const back = mesh(PGEO.chairBack, mLeather, this.root, 0, -0.04, -0.22); back.rotation.x = -0.12;
       mesh(PGEO.chairSeat, mLeather, this.root, 0, -0.37, -0.05, false);
+      const roll = mesh(PGEO.roll, mLeather, this.root, 0, 0.23, -0.25); roll.rotation.z = Math.PI / 2;
     } else {
       // standing figure: skirt, legs and shoes, with a walk cycle
       if (!PGEO.skirt) {
@@ -104,7 +120,9 @@ class Person {
       if (L.pants) { if (!PGEO.hips) PGEO.hips = new THREE.CylinderGeometry(0.15, 0.13, 0.16, 18); mesh(PGEO.hips, M(L.pants, 0.8), this.root, 0, HIP_Y - 0.06, -0.02); }
       else mesh(PGEO.skirt, M('#16161b', 0.85), this.root, 0, HIP_Y, -0.02);
       const mLeg = M(L.pants || '#3a2c2a', L.pants ? 0.8 : 0.45), mShoe = M('#0e0e10', 0.35);
-      this.legs = [1, -1].map(sg => { const g = new THREE.Group(); g.position.set(sg * 0.055, HIP_Y - 0.02, -0.02); this.root.add(g); const lg = mesh(PGEO.leg, mLeg, g, 0, -0.47, 0); if (L.pants) lg.scale.set(1.8, 1, 1.8); mesh(PGEO.shoe, mShoe, g, 0, -0.945, 0.03); return g; });
+      this.legs = [1, -1].map(sg => { const g = new THREE.Group(); g.position.set(sg * 0.055, HIP_Y - 0.02, -0.02); this.root.add(g); const lg = mesh(L.pants ? PGEO.leg : PGEO.legF, mLeg, g, 0, -0.47, 0); if (L.pants) lg.scale.set(1.8, 1, 1.8); mesh(PGEO.shoe, mShoe, g, 0, -0.945, 0.03);
+        if (!L.pants) mesh(PGEO.heel, mShoe, g, 0, -0.97, -0.012); return g; });
+      if (L.apron) { const ap = mesh(new THREE.PlaneGeometry(0.2, 0.3), M('#f4efe6', 0.85, { side: THREE.DoubleSide }), this.root, 0, HIP_Y - 0.17, 0.135, false); ap.rotation.x = -0.12; mesh(new THREE.BoxGeometry(0.25, 0.025, 0.24), M('#f4efe6', 0.85), this.root, 0, HIP_Y + 0.005, -0.015, false); }
       this.walkPh = 0; this.walkAmt = 0;
     }
     // Torso
@@ -119,22 +137,37 @@ class Person {
       const c = mesh(PGEO.collar, mTop2, this.torso, 0, 0.545, 0.0, false); c.rotation.x = Math.PI / 2; c.scale.set(1, 0.85, 1);
     }
     if (L.badge) { const b = mesh(PGEO.knot, M('#e2b847', 0.3, { metalness: 0.8 }), this.torso, 0.075, 0.42, 0.09, false); b.scale.set(1.9, 2.2, 0.6); }
+    if (L.lapels) {
+      const mLap = M(new THREE.Color(L.top).multiplyScalar(0.7).getStyle(), 0.7);
+      for (const s of [1, -1]) { const lp = mesh(PGEO.lapel, mLap, this.torso, s * 0.004, 0.38, 0.098, false); lp.scale.x = s; lp.rotation.x = -0.25; }
+      const v = mesh(PGEO.shirtFront, mTop2, this.torso, 0, 0.45, 0.094, false); v.scale.set(0.7, 0.45, 1); v.rotation.x = -0.2;
+      if (L.tie) { const tie = mesh(new THREE.BoxGeometry(0.022, 0.15, 0.006), M(L.tie, 0.5), this.torso, 0, 0.44, 0.103, false); tie.rotation.x = -0.2; }
+      for (const y of [0.2, 0.28]) mesh(PGEO.button, mDark, this.torso, 0.018, y, 0.103, false);
+    }
+    if (L.dealer) for (const y of [0.16, 0.23, 0.3]) mesh(PGEO.button, M('#c9a24f', 0.3, { metalness: 0.9 }), this.torso, 0, y, 0.102, false);
+    if (L.necklace) { const n = mesh(new THREE.TorusGeometry(0.062, 0.004, 6, 30, Math.PI), M('#d9c89a', 0.25, { metalness: 0.9 }), this.torso, 0, 0.53, 0.035, false); n.rotation.set(Math.PI * 0.62, 0, Math.PI); }
     mesh(PGEO.neck, mSkin, this.torso, 0, 0.59, 0);
     // Head
     this.head = new THREE.Group(); this.head.position.set(0, 0.625, 0.005); this.torso.add(this.head);
     const hd = mesh(PGEO.head, mSkin, this.head, 0, 0.1, 0); hd.scale.set(L.g === 'f' ? 0.96 : 1, 1.17, 1.04);
     for (const s of [1, -1]) { const e = mesh(PGEO.ear, mSkin, this.head, s * 0.093, 0.1, -0.005, false); e.scale.set(0.45, 1, 0.8); }
-    const nose = mesh(PGEO.nose, mSkin, this.head, 0, 0.084, 0.103, false); nose.rotation.x = Math.PI / 2;
+    const jaw = mesh(PGEO.jaw, mSkin, this.head, 0, 0.06, 0.004, false); jaw.scale.set(L.g === 'f' ? 0.84 : 0.94, 0.66, 0.86); // a softer chin that blends into the head
+    const nose = mesh(PGEO.nose, mSkin, this.head, 0, 0.088, 0.101, false); nose.rotation.x = Math.PI / 2; nose.scale.set(0.8, 1, 0.8);
+    const tip = mesh(PGEO.noseTip, mSkin, this.head, 0, 0.074, 0.108, false); tip.scale.set(1.15, 0.9, 1);
+    const irisCol = ['#5a3a1e', '#3a6a9a', '#4a7a3a', '#7a5a2a', '#3a2a1a'][Math.floor(rr(5) * 5)], mIris = M(irisCol, 0.35), mGlint = new THREE.MeshBasicMaterial({ color: 0xffffff }); this.mats.push(mGlint);
     this.eyes = []; this.pupils = []; this.brows = [];
     for (const s of [1, -1]) {
-      const e = mesh(PGEO.eye, mWhite, this.head, s * 0.034, 0.112, 0.085, false); e.scale.set(1, 1, 0.55); this.eyes.push(e);
-      const p = mesh(PGEO.pupil, mDark, this.head, s * 0.034, 0.112, 0.094, false); p.scale.set(1, 1, 0.5); this.pupils.push(p);
-      const b = mesh(PGEO.brow, mHair, this.head, s * 0.034, 0.142, 0.093, false); this.brows.push(b);
+      const eg = new THREE.Group(); eg.position.set(s * 0.034, 0.112, 0.085); this.head.add(eg); this.eyes.push(eg);
+      const e = mesh(PGEO.eye, mWhite, eg, 0, 0, 0, false); e.scale.set(1, 1, 0.55);
+      mesh(PGEO.iris, mIris, eg, 0, 0, 0.0093, false); mesh(PGEO.pupil2, mDark, eg, 0, 0, 0.0095, false); mesh(PGEO.glint, mGlint, eg, s * 0.004, 0.004, 0.0097, false);
+      this.pupils.push(new THREE.Object3D());
+      const lash = mesh(PGEO.lash, mDark, this.head, s * 0.034, 0.1235, 0.0935, false); lash.rotation.z = s * -0.12; if (L.g === 'f') lash.scale.set(1.15, 1.6, 1);
+      const b = mesh(PGEO.brow, mHair, this.head, s * 0.034, 0.142, 0.093, false); b.scale.set(1.1, L.g === 'f' ? 1.0 : 1.2, 1); this.brows.push(b);
     }
     this.mouth = new THREE.Group(); this.mouth.position.set(0, 0.046, 0.088); this.head.add(this.mouth);
-    this.mSmile = mesh(PGEO.smile, mLips, this.mouth, 0, 0.012, 0, false); this.mSmile.rotation.z = -Math.PI / 2 - Math.PI * 0.35;
-    this.mFrown = mesh(PGEO.smile, mLips, this.mouth, 0, -0.018, 0, false); this.mFrown.rotation.z = Math.PI / 2 - Math.PI * 0.35;
-    this.mFlat = mesh(PGEO.mouthFlat, mLips, this.mouth, 0, 0, 0, false);
+    this.mSmile = mesh(PGEO.lip, mLips, this.mouth, 0, 0.012, 0, false); this.mSmile.rotation.z = -Math.PI / 2 - Math.PI * 0.35;
+    this.mFrown = mesh(PGEO.lip, mLips, this.mouth, 0, -0.018, 0, false); this.mFrown.rotation.z = Math.PI / 2 - Math.PI * 0.35;
+    this.mFlat = mesh(PGEO.lipFlat, mLips, this.mouth, 0, 0, 0, false);
     this.mOpen = mesh(PGEO.mouthO, M('#3a1414', 0.7), this.mouth, 0, -0.004, 0.002, false); this.mOpen.scale.set(1, 1.25, 1);
     // Hair and accessories
     const capHair = () => { const c = mesh(PGEO.cap, mHair, this.head, 0, 0.1, -0.006); c.scale.set(1.05, 1.19, 1.1); c.rotation.x = -0.6; return c; };
@@ -162,12 +195,20 @@ class Person {
     }
     // Arms live on the root and are solved each frame
     const thin = L.g === 'f' ? 0.86 : 1;
+    const mGarter = L.dealer ? M('#8a1626', 0.5) : null, mCuff = L.cuffs || L.dealer ? mWhite : null;
     this.arms = [1, -1].map(sgn => {
-      const sh = mesh(PGEO.shoulder, L.dealer ? mTop : mTop, this.root); sh.scale.setScalar(thin);
-      const up = mesh(PGEO.upper, sleeve, this.root); up.scale.set(thin, 1, thin);
-      const fo = mesh(PGEO.fore, sleeve, this.root); fo.scale.set(thin, 1, thin);
-      const ha = mesh(PGEO.hand, mSkin, this.root); ha.scale.set(0.95 * thin, 1.28, 0.55);
-      return { sgn, sh, up, fo, ha };
+      const sh = mesh(PGEO.shoulder, L.dealer ? mTop : mTop, this.root); sh.scale.set(0.84 * thin, 0.78 * thin, 0.84 * thin); // smaller, so the shoulder reads as part of the body
+      const up = mesh(PGEO.upperT, sleeve, this.root); up.scale.set(thin, 1, thin);
+      const el = mesh(PGEO.joint, sleeve, this.root); el.scale.setScalar(thin);
+      const fo = mesh(PGEO.foreT, sleeve, this.root); fo.scale.set(thin, 1, thin);
+      const cuff = mCuff ? mesh(PGEO.cuff, mCuff, this.root) : null; if (cuff) cuff.scale.set(thin, 1, thin);
+      const garter = mGarter ? mesh(PGEO.band, mGarter, this.root) : null;
+      // the hand: a palm, four slightly curled fingers and a thumb toward the body; local +Y runs along the fingers, +Z faces the table
+      const ha = new THREE.Group(); this.root.add(ha);
+      const palm = mesh(PGEO.palm, mSkin, ha, 0, 0, 0); palm.scale.set(0.95 * thin, 1.05, 0.5);
+      for (let f = 0; f < 4; f++) { const fg = mesh(PGEO.finger, mSkin, ha, (-0.021 + f * 0.014) * thin, 0.05 - Math.abs(f - 1.5) * 0.004, 0.006); fg.rotation.x = 0.35; fg.scale.setScalar(thin * (f === 3 ? 0.85 : 1)); }
+      const th = mesh(PGEO.thumb, mSkin, ha, -sgn * 0.032 * thin, 0.012, 0.004); th.rotation.z = sgn * 0.85; th.rotation.x = 0.2; th.scale.setScalar(thin);
+      return { sgn, sh, up, el, fo, cuff, garter, ha };
     });
     // State
     this.rest = [new THREE.Vector3(0.13, 0.115, 0.36), new THREE.Vector3(-0.13, 0.115, 0.36)];
@@ -252,7 +293,9 @@ class Person {
     _pl.set(sgn * 0.75, -1, -0.45); _pl.addScaledVector(_d, -_pl.dot(_d)).normalize();
     _E.copy(_S).addScaledVector(_d, a * cosA).addScaledVector(_pl, a * sinA);
     _T.copy(_S).addScaledVector(_d, L);
-    placeSeg(arm.up, _S, _E); placeSeg(arm.fo, _E, _T);
+    placeSeg(arm.up, _S, _E); placeSeg(arm.fo, _E, _T); arm.el.position.copy(_E);
+    if (arm.garter) { placeSeg(arm.garter, _S, _E); arm.garter.position.lerpVectors(_S, _E, 0.42); arm.garter.rotateX(Math.PI / 2); }
+    if (arm.cuff) { placeSeg(arm.cuff, _E, _T); arm.cuff.position.lerpVectors(_E, _T, 0.93); }
     // Hand: along the forearm, palm facing down
     _d.subVectors(_T, _E).normalize();
     arm.ha.position.copy(_T).addScaledVector(_d, 0.04);
@@ -399,7 +442,23 @@ const GESTURES = {
   },
   tap(k, P, H, F, me, g) { g.snap = true; const e = smoothEnv(k, 0.2, 0.25), bob = Math.abs(Math.sin(k * Math.PI * 4)) * 0.055; H[1].lerp(_lv.set(-0.06, 0.1 + bob, 0.37), e); P.lean += 0.05 * e; },
   throwCards(k, P, H, F, me, g) { g.snap = true; const e = smoothEnv(k, 0.15, 0.35); const v = k < 0.4 ? _lv.set(-0.05, 0.12, 0.36) : _lv.set(-0.01, 0.34, 0.5); H[1].lerp(v, e); P.lean += 0.1 * e; Object.assign(F, FACES.furious); },
-  sip(k, P, H, F, me, g) { const e = smoothEnv(k, 0.3, 0.3); H[1].lerp(_lv.set(-0.035, 0.6, 0.15), e); P.hp -= 0.22 * Math.max(0, Math.sin(k * Math.PI)) * e; },
+  sip(k, P, H, F, me, g) {
+    if (!g.local) { const e = smoothEnv(k, 0.3, 0.3); H[1].lerp(_lv.set(-0.035, 0.6, 0.15), e); P.hp -= 0.22 * Math.max(0, Math.sin(k * Math.PI)) * e; return; }
+    // reach the glass, lift it to the mouth, drink, put it back (the glass follows the hand in Bar.update)
+    const glass = _T.copy(g.local); glass.y += 0.075; me.reachLimit(glass, -1);
+    if (k < 0.2) H[1].lerp(glass, smoothEnv(k / 0.2, 0.6, 0.01));
+    else if (k < 0.8) { const m = (k - 0.2) / 0.6, up = smoothEnv(m, 0.35, 0.35); H[1].copy(glass).lerp(_lv.set(-0.03, 0.6, 0.16), up); P.hp -= 0.2 * up; P.lean -= 0.05 * up; }
+    else H[1].lerp(glass, 1 - smoothEnv((k - 0.8) / 0.2, 0.01, 0.6));
+    g.snap = true;
+  },
+  peek(k, P, H, F, me, g) {
+    const e = smoothEnv(k, 0.3, 0.3), c = _T.copy(g.local); c.y = Math.max(c.y, 0.06); me.reachLimit(c, 1);
+    const lift = Math.sin(clamp((k - 0.35) / 0.3, 0, 1) * Math.PI) * 0.03;
+    for (let s = 0; s < 2; s++) H[s].lerp(_lv.set(c.x + (s ? -0.04 : 0.04), c.y + 0.04 + lift, c.z - 0.02), e);
+    P.hp += 0.24 * e; P.lean += 0.06 * e; g.snap = true;
+  },
+  relax(k, P, H) { const e = smoothEnv(k, 0.25, 0.3); H[0].lerp(_lv.set(0.13, 0.03, 0.17), e); H[1].lerp(_lv.set(-0.13, 0.03, 0.17), e); P.lean -= 0.12 * e; P.hp -= 0.04 * e; },
+  square(k, P, H) { const e = smoothEnv(k, 0.25, 0.3), tap = Math.abs(Math.sin(k * Math.PI * 6)) * 0.02; H[0].lerp(_lv.set(0.05, 0.12 + tap, 0.36), e); H[1].lerp(_lv.set(-0.05, 0.12 + tap, 0.36), e); P.hp += 0.16 * e; },
   nod(k, P, H, F) { const e = smoothEnv(k, 0.1, 0.2); P.hp += Math.sin(k * Math.PI * 4) * 0.2 * e; Object.assign(F, FACES.wink); },
   headShake(k, P, H, F) { const e = smoothEnv(k, 0.15, 0.2); P.hy += Math.sin(k * Math.PI * 6) * 0.36 * e; P.hp += 0.12 * e; Object.assign(F, FACES.annoyed); F.mouth = 'frown'; },
   shrug(k, P, H, F) { const e = smoothEnv(k, 0.2, 0.25); H[0].lerp(_lv.set(0.3, 0.22, 0.22), e); H[1].lerp(_lv.set(-0.3, 0.22, 0.22), e); P.hr += 0.16 * e; Object.assign(F, FACES.worried); F.mouth = 'flat'; },
@@ -455,11 +514,28 @@ function placePeople() {
   for (let i = 1; i < NS; i++) { const pp = people[i], s = A.seats[i]; if (!pp || !s) continue; pp.root.position.copy(s.body); pp.root.lookAt(s.face || new V3()); pp.root.updateMatrixWorld(true); }
   if (dealerP && A.dealerBody) { dealerP.root.position.copy(A.dealerBody); dealerP.root.lookAt(0, 0, 0); dealerP.root.updateMatrixWorld(true); }
 }
+/* Small things people do while waiting: peek at their cards, think, play with chips, lean back,
+   glance at someone. The dealer squares the deck now and then. Never during their own turn. */
+function idleLife(dt) {
+  for (let i = 1; i < NS; i++) {
+    const q = people[i], p = S.players[i]; if (!q || !p || p.out || !q.root.visible) continue;
+    q._idle = (q._idle ?? rand(3, 8)) - dt; if (q._idle > 0 || q.gest || S.toAct === i) continue;
+    q._idle = rand(4, 10);
+    const live = S.inHand && !p.folded && dealtIn(p), r = Math.random(), s = A.seats[i];
+    if (live && r < 0.3) q.gesture('peek', 1.4, { world: s.card });
+    else if (live && r < 0.5) q.gesture('riffle', 1.8, { world: s.stack });
+    else if (r < 0.65) q.gesture('think', 2.2);
+    else if (r < 0.8 && !live) q.gesture('relax', 3);
+    else { const others = [0, 1, 2, 3, 4].filter(j => j !== i && S.players[j] && !S.players[j].out); if (others.length) { q.look = seatHeadWorld(pick(others), new V3()); q.glareUntil = performance.now() + 1800; } }
+  }
+  if (dealerP && !dealerP.gest && !dealerP.holding) { dealerP._idle = (dealerP._idle ?? 6) - dt; if (dealerP._idle <= 0) { dealerP._idle = rand(7, 13); dealerP.gesture('square', 1.3); } }
+}
 let lastPT = 0;
 function updatePeople(now) {
   const t = now / 1000, dt = Math.min(0.05, lastPT ? t - lastPT : 0.016); lastPT = t;
   fireScale();
   for (let i = 1; i < NS; i++) { const q = people[i]; if (!q) continue; if (q.root.visible) q.update(dt, t); else if (q.fire) { q.fire.fl.pts.visible = q.fire.sm.pts.visible = false; } }
+  if (!S.test) idleLife(dt);
   Bar.update(dt, t);
   Police.update(dt, t);
   if (dealerP) {

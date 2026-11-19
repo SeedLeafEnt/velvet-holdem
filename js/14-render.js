@@ -23,7 +23,7 @@ function layout(force) {
     const rim = G.railW + G.trackW, fW = G.table.W - 2 * rim, fD = G.table.D - 2 * rim; G.felt = { W: fW, D: fD };
     computeAnchors(); buildTable(); positionPiles(); placePeople(); Bar.layout();
     for (const c of liveCards) placeNow(c);
-    placeDealer(true); TFX.neighbours();
+    placeDealer(true); TFX.neighbours(); TFX.details();
   }
   fitCamera();
   FX.resize();
@@ -84,6 +84,19 @@ const TFX = {
     if (!p.isHero) { const pt = proj(s.stack, 0, 0.05, 0); FX.burst(pt.x, pt.y, 26, 0.7); }
   },
   reset() { this.dimTo = 1; this.winTo = 0; this.winUntil = 0; stageEl.classList.remove('cine'); },
+  // brass cup holders under every drink, and the dealer's chip tray
+  details() {
+    if (!this.det) { this.det = new THREE.Group(); scene.add(this.det); }
+    const g = this.det; while (g.children.length) { const c = g.children.pop(); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+    const brass = MAT.brass, hole = new THREE.MeshStandardMaterial({ color: 0x0d0907, roughness: 0.6 });
+    for (let i = 0; i < NS; i++) { const s = A.seats[i]; if (!s || !s.drink) continue;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.007, 8, 28), brass); ring.rotation.x = Math.PI / 2; ring.position.set(s.drink.x, s.drink.y + 0.004, s.drink.z); g.add(ring);
+      const d = new THREE.Mesh(new THREE.CircleGeometry(0.046, 24), hole); d.rotation.x = -Math.PI / 2; d.position.set(s.drink.x, s.drink.y + 0.002, s.drink.z); g.add(d); }
+    const tray = new THREE.Group(); tray.position.set(A.tipSpot.x, 0, A.tipSpot.z - 0.075); g.add(tray);
+    tray.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.014, 0.075), new THREE.MeshStandardMaterial({ color: 0x1a0f0a, roughness: 0.4 })), { castShadow: true }));
+    const cols = [0xf1ece0, 0xc81e2e, 0x1e5bb8, 0x2e8b4e, 0x161616, 0x7a3aa8, 0xe0a020, 0xc81e2e];
+    cols.forEach((c, k) => { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.022, 18), new THREE.MeshStandardMaterial({ color: c, roughness: 0.45 })); st.rotation.x = Math.PI / 2; st.scale.y = 3; st.position.set(-0.18 + k * 0.052, 0.024, 0); st.castShadow = true; tray.add(st); });
+  },
   // the edges of other tables, each under its own lamp, just inside the view
   neighbours() {
     const g = this.group; if (!g) return;

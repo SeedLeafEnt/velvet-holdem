@@ -60,7 +60,7 @@ async def main():
         after = await pg.evaluate("() => { const S = window.__velvet.S; return { chips: S.players[4].chips, bar: S.bar || 0, queued: window.__velvet.Bar.queue.some(q => q.i === 0) || (window.__velvet.Bar.job && window.__velvet.Bar.job.i === 0) }; }")
         bal1 = await pg.evaluate(BALANCE)
         got = False
-        for _ in range(120):
+        for _ in range(240):
             if await pg.evaluate("() => (window.__velvet.S.players[0].buzz || 0) > 1"): got = True; break
             await pg.wait_for_timeout(250)
         # refuse
@@ -76,6 +76,10 @@ async def main():
             if st["between"]: bals.append(await pg.evaluate(BALANCE))
             if st["n"] >= start + 4: break
             await pg.wait_for_timeout(200)
+        # on a slow machine the poll can miss the short gap between hands: wait for one and check the totals there
+        for _ in range(300):
+            if await pg.evaluate("() => window.__velvet.S.betweenHands"): bals.append(await pg.evaluate(BALANCE)); break
+            await pg.wait_for_timeout(100)
         await pg.screenshot(path=shot(f"{name}_3_play.png"))
         checks = {
             "stages": u["stages"] == [0, 1, 2, 3],

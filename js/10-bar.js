@@ -104,7 +104,7 @@ const Bar = {
   },
   sip(i) {
     const pp = people[i], d = this.drinks[i]; if (!pp || !d || d.level < 0.05 || pp.gest) return false;
-    pp.gesture('sip', 1.9); this.sips.push({ i, t0: performance.now() / 1000, dur: 1.9 * spd(), took: false });
+    pp.gesture('sip', 2.3, { world: this.seatOf(i).drink }); this.sips.push({ i, t0: performance.now() / 1000, dur: 2.3 * spd(), took: false });
     return true;
   },
   order(i, type, opts = {}) {
@@ -117,12 +117,12 @@ const Bar = {
     for (let k = this.sips.length - 1; k >= 0; k--) {
       const s = this.sips[k], d = this.drinks[s.i], pp = people[s.i], kk = (t - s.t0) / s.dur;
       if (!d || !pp || kk >= 1 || !pp.root.visible) { this.sips.splice(k, 1); if (d) { this.rest(s.i); if (!s.took) d.setLevel(d.level - rand(0.12, 0.2)); this.afterSip(s.i); } continue; }
-      const e = smoothEnv(kk, 0.28, 0.28);
-      pp.handWorld(1, _bv); _bv.y -= 0.06;
-      d.g.position.copy(this.seatOf(s.i).drink).lerp(_bv, e);
-      const tilt = Math.max(0, Math.sin(Math.PI * clamp((kk - 0.3) / 0.4, 0, 1))) * 1.1 * e;
+      // the glass stays on the table until the hand has it, rides in the hand to the mouth and back
+      if (kk < 0.2 || kk > 0.8) { this.rest(s.i); continue; }
+      pp.handWorld(1, _bv); _bv.y -= 0.075; d.g.position.copy(_bv);
+      const m = (kk - 0.2) / 0.6, tilt = Math.max(0, Math.sin(Math.PI * clamp((m - 0.3) / 0.4, 0, 1))) * 1.1;
       _bw.set(1, 0, 0).applyQuaternion(pp.root.quaternion); _bq.setFromAxisAngle(_bw, -tilt); d.g.quaternion.copy(_bq);
-      if (kk > 0.55 && !s.took) { s.took = true; d.setLevel(d.level - rand(0.12, 0.2)); }
+      if (kk > 0.5 && !s.took) { s.took = true; d.setLevel(d.level - rand(0.12, 0.2)); }
     }
     // the odd sip between decisions
     this.nextSip -= dt;
@@ -182,6 +182,8 @@ const Bar = {
       if (dist <= step) { pos.x = tgt.x; pos.z = tgt.z; j.k++; if (j.k >= j.path.length) { if (j.phase === 'in') { j.phase = 'serve'; j.t0 = t; } else { this.job = null; w.root.visible = false; this.tray.visible = false; if (this.carry) { this.carry.dispose(); this.carry = null; } return; } } }
       else { pos.x += _bv.x / dist * step; pos.z += _bv.z / dist * step; const yaw = Math.atan2(_bv.x, _bv.z); w.root.rotation.y = lerpAngle(w.root.rotation.y, yaw, Math.min(1, dt * 8)); }
       w.walkPh = (w.walkPh || 0) + step * 13; w.walkAmt = Math.min(1, (w.walkAmt || 0) + dt * 4);
+      if (!w._r1) w._r1 = w.rest[1].clone(); w.rest[1].copy(w._r1); w.rest[1].z += Math.sin(w.walkPh) * 0.1 * w.walkAmt; w.rest[1].y += Math.abs(Math.cos(w.walkPh)) * 0.02 * w.walkAmt;
+      w.root.rotation.z = Math.sin(w.walkPh) * 0.025 * w.walkAmt;
       pos.y = WAIT_Y + Math.abs(Math.sin(w.walkPh)) * 0.012;
     } else if (j.phase === 'serve') {
       w.walkAmt = Math.max(0, (w.walkAmt || 0) - dt * 5); pos.y = WAIT_Y;
