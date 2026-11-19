@@ -26,7 +26,8 @@ the same day became an installable web app (PWA) in `C:\Users\User\velvet-holdem
 `index.html` holds the markup only. The game code is in `js/`, loaded in this order:
 
 1. `js/00-three.js` is an ES module. It imports three.js through the importmap
-   in `index.html` and sets `window.THREE` and `window.RoomEnvironment`.
+   in `index.html` and sets `window.THREE`, `window.RoomEnvironment` and
+   `window.THREE_FX` (EffectComposer, RenderPass, UnrealBloomPass, OutputPass for the city).
 2. `js/01-core.js` … `js/19-boot.js` are **classic `defer` scripts**, each starting
    with `'use strict'`. Module and deferred scripts run in document order, so
    THREE exists before `01` runs.
@@ -67,7 +68,8 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `15-hud.js` | HUD | Seats, table talk, tournament clock, top bar, hero dock, `heroAct`. |
 | `16-ai.js` | AI, pots | Decisions, reads, timing tells; `buildPots`. |
 | `17-flow.js` | Game flow | `newGame`, `gameLoop`, `playHand`, `bettingRound`, `takeTurn`, `showdown`, `afterHand`. |
-| `18-overlays.js` | Overlays | `openOverlay`, `closeOverlay`, menus. |
+| `18-overlays.js` | Overlays | `openOverlay`, `closeOverlay`, menus, `showStart`. |
+| `18b-city.js` | City | `City`: the 3D home screen (own canvas, renderer and bloom), places, labels, dock. |
 | `19-boot.js` | Persistence, boot | `SET_KEY`, `SAVE_KEY`; start-up; service-worker registration; `window.__velvet` test hook. |
 
 Other files: `voice/*.mp3` (recorded voices; `VOICE_DATA` has every clip's
@@ -115,6 +117,7 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 | `gamecal.py 0` / `gamecal.py 1` | Calendar: date maths, day/week/month events, 4 h per hand, 2 h per casino round (phone / desktop). |
 | `drinks.py 0` / `drinks.py 1` | Drinks: buzz stages, luck rate and deck integrity, drunk mistakes, drink offers (they pay, refuse is free), chips balance; screenshots. |
 | `police.py 0` / `police.py 1` | Police: catch odds, an opponent arrested (stack seized, chips balance), patrol, hero arrested (quick game over / Career jail), jail blocks rooms and casino, lose/win/bail; screenshots. |
+| `city.py 0` / `city.py 1` | City home screen (`?city=1`): places open the right menus, a game hides it, leaving brings it back, jail closes club and casino; screenshots. |
 | `bank.py 0` / `bank.py 1` | Bank: score, offer, borrow, interest due in week 1, on-time and missed payments, savings, early withdrawal; screenshots. |
 | `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
 | `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
@@ -125,7 +128,9 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 Tests serve the folder on a local port. Software WebGL is very slow; on this PC
 set `VELVET_GPU=1` (PowerShell: `$env:VELVET_GPU="1"`) to use the graphics card.
 The game skips service-worker registration under test automation
-(`navigator.webdriver`); `pwa.py` registers it by hand.
+(`navigator.webdriver`); `pwa.py` registers it by hand. Under automation the classic
+start screen is also used instead of the 3D city, so older tests can click `#btnStart`;
+`city.py` loads the page with `?city=1` to test the city.
 
 ## Working with this user
 
@@ -222,13 +227,32 @@ The game skips service-worker registration under test automation
   `showEnd` → `Jail.end`: win frees you, a loss keeps you locked up. No bribes, drinks or
   saves in a jail game; game time still moves.
 
+## City home screen (`City` in `18b-city.js`)
+
+- `showStart` calls `City.show()`; the classic `#startScreen` is the fallback (no WebGL,
+  or test automation without `?city=1`) and is still reachable from the city's
+  "Quick game" button. `newGame` and `Casino.enter` call `City.hide()`; `frame()` skips the
+  table while the city shows.
+- Its own canvas `#cityGl` and WebGLRenderer (pixel ratio ≤ 1.5) with bloom, built on first
+  show. Layer: `#city` z-index 25 (table below; toasts 30, menus 40, banners 60 above).
+- A night street, all procedural (no model files): Velvet Bank (x −27), Riverside Card Club
+  (−9), The Golden Strip casino tower (9), County Jail with a flashing police car (27),
+  lamps with light pools, wet road, traffic, skyline. Background buildings share six window
+  textures tiled by UVs to keep phone memory low.
+- Places → `openLobby({ tab, filter, title })`: club = rooms with poker only
+  (`lobFilter 'poker'`), casino = blackjack and roulette only, bank = Bank tab, phone =
+  Challenges tab. In jail the club and casino labels turn red and lead to the jail card.
+- Camera: on wide screens the whole street; on phones it glides to the chosen place
+  (‹ ›, swipe, or tap a building or its label). A "Continue" pill shows when a saved game exists.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).
 2. ~~Bank: loans, interest due in the first week, savings with a chosen rate~~ — done (see above).
 3. ~~Drinks with effects: buzz, luck, drunk mistakes, drink offers~~ — done (see above).
 4. ~~Bribes and police: heat, patrol, arrests, jail~~ — done (see above).
-5. UI/UX: city-map menu, an in-game phone (calendar, bank, messages), livelier
-   characters, cinematic all-in and river moments, day/night lighting.
+5. UI/UX: ~~3D city home screen~~ done. Still to do: an in-game phone (calendar, bank,
+   messages), livelier characters (free 3D models), cinematic all-in and river moments,
+   day/night lighting.
 6. Voices last (ElevenLabs, about 14,600 credits): write and approve the lines
    first, count characters, then record the most-heard lines first.

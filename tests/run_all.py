@@ -4,7 +4,7 @@ import subprocess, sys, time, pathlib
 
 HERE = pathlib.Path(__file__).resolve().parent
 TESTS = [
-    ["selfplay3d.py"], ["selfplay_ko.py"], ["pwa.py"], ["gamecal.py", "0"], ["gamecal.py", "1"], ["bank.py", "0"], ["bank.py", "1"], ["drinks.py", "0"], ["drinks.py", "1"], ["police.py", "0"], ["police.py", "1"],
+    ["selfplay3d.py"], ["selfplay_ko.py"], ["pwa.py"], ["gamecal.py", "0"], ["gamecal.py", "1"], ["bank.py", "0"], ["bank.py", "1"], ["drinks.py", "0"], ["drinks.py", "1"], ["police.py", "0"], ["police.py", "1"], ["city.py", "0"], ["city.py", "1"],
     ["act.py", "0"], ["act.py", "1"],
     ["casino.py", "0"], ["casino.py", "1"], ["casino2.py"], ["casino2rl.py"], ["rlcam.py", "0", "bj", "rl"], ["rlcam.py", "1", "bj", "rl"],
     ["stage1.py"], ["stage2s.py", "0"], ["stage2s.py", "1"], ["stage3.py"],

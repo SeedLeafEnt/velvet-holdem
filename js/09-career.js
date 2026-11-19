@@ -251,7 +251,10 @@ function renderCareerChip() {
   }
 }
 let lobTab = 'rooms';
-function openLobby() {
+let lobFilter = null; // 'poker' (the Card Club) or 'casino' (The Golden Strip) when opened from the city
+function openLobby(opts = {}) {
+  lobFilter = opts.filter || null; if (opts.tab) lobTab = opts.tab;
+  const h2 = $('#lobby h2'); h2.textContent = opts.title || 'Career'; h2.style.fontSize = h2.textContent.length > 12 ? '20px' : ''; h2.style.paddingRight = h2.textContent.length > 12 ? '34px' : '';
   Career.load(); Career.checkUnlocks(); renderLobby(); openOverlay('lobby');
 }
 function renderLobby() {
@@ -276,7 +279,7 @@ function renderLobby() {
     card.innerHTML = `<div class="rh"><i class="sw"></i><div><b>${r.name}</b><span>${r.place} · ${r.level === 'sharp' ? 'Sharp players' : 'Relaxed players'}</span></div></div>`;
     if (!open) { const p = document.createElement('p'); p.className = 'lockmsg'; p.textContent = `Unlocks when your bankroll reaches ${money(r.need)}`; card.appendChild(p); }
     else {
-      const row = document.createElement('div'); row.className = 'games';
+      const row = document.createElement('div'); row.className = 'games'; if (lobFilter === 'casino') row.hidden = true;
       for (const [kind, label] of [['cash', 'Cash game'], ['sng', 'Sit & Go'], ['ko', 'Bounty']]) {
         const cost = careerCost(r, kind), bt = document.createElement('button');
         bt.innerHTML = `${label}<small>${kind === 'ko' ? `${money(r.ko[0])} + ${money(r.ko[1])}` : money(cost)}</small>`;
@@ -284,7 +287,7 @@ function renderLobby() {
         row.appendChild(bt);
       }
       card.appendChild(row);
-      if (typeof casinoButtons === 'function') casinoButtons(card, r);
+      if (typeof casinoButtons === 'function' && lobFilter !== 'poker') casinoButtons(card, r);
     }
     rooms.appendChild(card);
   }

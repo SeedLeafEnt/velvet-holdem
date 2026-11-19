@@ -117,7 +117,7 @@ function showStart() {
     cb.onclick = () => { unlockAudio(); closeOverlay('startScreen'); newGame(saved.mode, saved.level, saved); };
   } else cb.hidden = true;
   renderTop(); renderStartCareer(); renderCareerChip();
-  openOverlay('startScreen');
+  if (!City.show()) openOverlay('startScreen'); // the 3D city is the home screen; the classic start screen is the fallback
 }
 
 let pickMode = 'sng', pickLevel = 'relaxed', pickStruct = 'turbo';

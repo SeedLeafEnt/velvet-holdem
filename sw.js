@@ -2,11 +2,13 @@
    Code (HTML/CSS/JS) is network-first, so a new version shows up as soon as you are online.
    Everything else (three.js, fonts, icons, voices) is cache-first.
    Bump VERSION when the file list changes. */
-const VERSION = 'velvet-v3';
+const VERSION = 'velvet-v4';
 const JS = ['00-three', '01-core', '02-audio', '03-fx', '04-personas', '05-state', '06-engine3d', '07-people', '08-tricks', '08b-police', '09-career', '09b-bank',
-  '10-bar', '11-stage1', '12-casino', '13-talk-act', '14-render', '15-hud', '16-ai', '17-flow', '18-overlays', '19-boot'].map(n => `js/${n}.js`);
+  '10-bar', '11-stage1', '12-casino', '13-talk-act', '14-render', '15-hud', '16-ai', '17-flow', '18-overlays', '18b-city', '19-boot'].map(n => `js/${n}.js`);
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/style.css', 'css/fonts.css', ...JS,
   'vendor/three/three.module.js', 'vendor/three/addons/environments/RoomEnvironment.js',
+  ...['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass', 'Pass', 'ShaderPass', 'MaskPass'].map(n => `vendor/three/addons/postprocessing/${n}.js`),
+  ...['CopyShader', 'LuminosityHighPassShader', 'OutputShader'].map(n => `vendor/three/addons/shaders/${n}.js`),
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   'fonts/BarlowCondensed-400.woff2', 'fonts/BarlowCondensed-500.woff2', 'fonts/BarlowCondensed-600.woff2', 'fonts/BarlowCondensed-700.woff2',
   'fonts/Limelight-400.woff2', 'fonts/SourceSerif4-700.woff2', 'fonts/SourceSerif4-800.woff2'];

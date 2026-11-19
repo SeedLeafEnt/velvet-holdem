@@ -32,6 +32,7 @@ let lastBusy = 0, frameN = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   if (!G.ok || S.test) return;
+  if (City.active) return; // the city draws on its own canvas
   if (Casino.active) { Casino.frame(now); return; }
   if (anims.length || flying.size || chipsDirty || (dealerP && dealerP.gest) || people.some(q => q && q.gest)) lastBusy = now;
   if (now - lastBusy > 2500 && (frameN++ % 2)) return; // idle: ~30 fps to save battery

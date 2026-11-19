@@ -19,7 +19,7 @@ function resetTableVisuals() {
   if (deckMesh && A.deckRest) { deckMesh.position.set(A.deckRest.x, 0.011, A.deckRest.z); deckMesh.rotation.y = 0; A.deck.copy(A.deckRest); }
 }
 function newGame(mode, level, restore, structure, opts) {
-  RUN++;
+  RUN++; City.hide();
   if (S.heroReject) { const rj = S.heroReject; S.heroResolve = S.heroReject = null; try { rj(ABORT); } catch (e) {} }
   clearTimeout(heroTurn._slow);
   resetTableVisuals(); FX.parts = []; Voice.stop();
