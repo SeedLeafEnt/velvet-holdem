@@ -289,6 +289,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid #ffe7a3; outline-
 .or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgba(214,178,100,.22); }
 .lobsheet { width: min(96vw, 520px); max-height: 92vh; overflow-y: auto; text-align: left; }
 .lobsheet h2 { text-align: center; }
+.lob-date { text-align: center; margin: -4px 0 8px; }
+.lob-date b { display: block; font-size: 16px; font-weight: 600; letter-spacing: .03em; color: #f3e3b3; }
+.lob-date span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.careerchip b { font-weight: 700; color: #ffe7a8; }
 .lob-head { display: flex; gap: 10px; margin: 6px 0 10px; }
 .lob-head > div { flex: 1; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(214,178,100,.22); }
 .lob-head .k { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #c9a85e; }

@@ -88,7 +88,7 @@ const Casino = {
     if (!this.active) return;
     $('#blinds').textContent = this.active === 'bj' ? 'Blackjack' : 'Roulette';
     const lim = TABLE_LIMITS[this.room.id];
-    $('#substatus').textContent = `${this.room.place} · ${money(lim[0])}–${money(lim[1])} · Bankroll ${money(Career.load().bankroll)}`;
+    $('#substatus').textContent = `${Cal.short()} · ${this.room.place} · ${money(lim[0])}–${money(lim[1])} · ${money(Career.load().bankroll)}`;
   },
   resize() {
     if (!this.active || !this.cam) return;
@@ -287,6 +287,7 @@ const BJ = {
     else Sound.lose();
     const net = back - this.hands.reduce((s, h) => s + h.bet, 0);
     showResult(net > 0 ? `You win ${money(net)}` : net === 0 ? 'Push' : `You lose ${money(-net)}`, net > 0 ? 'win' : net === 0 ? 'push' : 'lose');
+    Cal.advance('casino');
     Casino.renderTop();
     // chips: winners slide to you, losers go to the tray
     if (this.betStack) { const st = this.betStack, to = net >= 0 ? new V3(0, 0, 0.7) : new V3(0, 0.02, -0.74); this.betStack = null; await animate(520, e => st.position.lerpVectors(new V3(), to, e), easeInOut); this.grp.remove(st); }
@@ -459,6 +460,7 @@ const RL = {
     if (back > 0) { Career.add(back); Sound.win(); Achv.ev('rlWin', { straight }); if (straight) Achv.unlock('straight'); if (net >= 1000) Achv.unlock('spin1k'); }
     else Sound.lose();
     showResult(`${n} ${rlColor(n)} · ${net > 0 ? 'you win ' + money(net) : net === 0 ? 'you break even' : 'you lose ' + money(-net)}`, net > 0 ? 'win' : net === 0 ? 'push' : 'lose');
+    Cal.advance('casino');
     Casino.renderTop();
     setTimeout(() => {
       if (!this.built) return;

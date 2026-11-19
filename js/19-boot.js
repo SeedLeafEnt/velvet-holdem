@@ -91,4 +91,4 @@ try { VO.prefetch(); } catch (e) {}
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !navigator.webdriver) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
-window.__velvet = { Act, Casino, BJ, RL, Career, Bar, heroOrder, sendDrink, cam: () => camera, Music, Sound, tipDealer, taunt, setAngry, isAngry, calmDown, renderTalk, applyRigBoard, applyRigHole, people: () => people, dealer: () => dealerP, react, VO, run: () => RUN, anims: () => anims.length, S, evaluate, handName, buildPots, newGame, runoutEquity, equity, settings, Cards, setView, G, A, piles, liveCards, Clock, showBubble, layout };
+window.__velvet = { Act, Casino, BJ, RL, Career, Cal, Bar, heroOrder, sendDrink, cam: () => camera, Music, Sound, tipDealer, taunt, setAngry, isAngry, calmDown, renderTalk, applyRigBoard, applyRigHole, people: () => people, dealer: () => dealerP, react, VO, run: () => RUN, anims: () => anims.length, S, evaluate, handName, buildPots, newGame, runoutEquity, equity, settings, Cards, setView, G, A, piles, liveCards, Clock, showBubble, layout };

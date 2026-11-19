@@ -34,7 +34,7 @@ const Career = {
   load() {
     if (this.d) return this.d;
     let d = null; try { d = JSON.parse(localStorage.getItem(CAREER_KEY) || 'null'); } catch (e) {}
-    this.d = Object.assign({ bankroll: 1000, xp: 0, rooms: { club: true }, visited: {}, ach: {}, counters: {}, daily: null, bonusDay: '', streak: 0, lastBail: 0 }, d || {});
+    this.d = Object.assign({ bankroll: 1000, xp: 0, rooms: { club: true }, visited: {}, ach: {}, counters: {}, daily: null, bonusDay: '', streak: 0, lastBail: 0, cal: { min: 0 } }, d || {});
     return this.d;
   },
   save() { try { localStorage.setItem(CAREER_KEY, JSON.stringify(this.d)); } catch (e) {} },
@@ -56,6 +56,43 @@ const Career = {
   yesterday() { const t = new Date(Date.now() - 864e5); return `${t.getFullYear()}-${t.getMonth() + 1}-${t.getDate()}`; },
   dailyBonus() { const d = this.load(); const st = d.bonusDay === this.yesterday() ? d.streak + 1 : 1; return { amt: 200 + 50 * Math.min(st - 1, 6), streak: st }; },
   claimDaily() { const d = this.load(); if (d.bonusDay === this.today()) return; const b = this.dailyBonus(); d.bonusDay = this.today(); d.streak = b.streak; this.save(); this.add(b.amt, `Daily chips · day ${b.streak}`); Sound.win(); },
+};
+
+/* ---------- Calendar: game time that only moves while you play in Career mode ----------
+   One poker hand = 4 hours, one blackjack round or roulette spin = 2 hours.
+   It starts on Monday 1 January, Year 1, at 8 PM (2024 is used for the date maths because it starts on a Monday).
+   Other systems (the bank, later) listen with Cal.on(fn); fn gets { type: 'day'|'week'|'month', from, to }. */
+const CAL_BASE = Date.UTC(2024, 0, 1, 20, 0), CAL_YEAR0 = 2023;
+const CAL_STEP = { hand: 240, casino: 120 };
+const CAL_DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const CAL_MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const Cal = {
+  subs: [],
+  min() { const d = Career.load(); return (d.cal && d.cal.min) || 0; },
+  parts(min = this.min()) {
+    const t = new Date(CAL_BASE + min * 60000), day = t.getUTCDate();
+    return { year: t.getUTCFullYear() - CAL_YEAR0, month: t.getUTCMonth(), day, dow: t.getUTCDay(), hour: t.getUTCHours(), firstWeek: day <= 7, dayNo: Math.floor((min + 20 * 60) / 1440) + 1 };
+  },
+  hourText(h) { return h === 0 ? 'Midnight' : h === 12 ? 'Noon' : `${h % 12} ${h < 12 ? 'AM' : 'PM'}`; },
+  short(min) { const p = this.parts(min); return `${CAL_DOW[p.dow].slice(0, 3)} ${p.day} ${CAL_MON[p.month].slice(0, 3)} · ${this.hourText(p.hour)}`; },
+  long(min) { const p = this.parts(min); return `${CAL_DOW[p.dow]} ${p.day} ${CAL_MON[p.month]}, Year ${p.year} · ${this.hourText(p.hour)}`; },
+  on(fn) { this.subs.push(fn); },
+  advance(kind) {
+    if (S.test || !CAL_STEP[kind]) return;
+    const d = Career.load(); if (!d.cal) d.cal = { min: 0 };
+    const from = this.parts(d.cal.min);
+    d.cal.min += CAL_STEP[kind]; Career.save();
+    const to = this.parts(d.cal.min);
+    let type = null;
+    if (to.month !== from.month || to.year !== from.year) type = 'month';
+    else if (to.day !== from.day) type = to.dow === 1 ? 'week' : 'day';
+    if (type) {
+      if (type === 'month') showAchv(CAL_MON[to.month], `A new month begins · Year ${to.year}`, 'Calendar');
+      else toast(`${CAL_DOW[to.dow]} ${to.day} ${CAL_MON[to.month]}`, 1800);
+      for (const fn of this.subs) { try { fn({ type, from, to }); } catch (e) { console.error(e); } }
+    }
+    renderCareerChip();
+  },
 };
 
 /* ---------- Achievements ---------- */
@@ -202,7 +239,7 @@ function renderBounties() {
 const careerChip = document.createElement('div'); careerChip.className = 'careerchip'; careerChip.hidden = true; overlayEl.appendChild(careerChip);
 function renderCareerChip() {
   const on = !!S.career && S.started; careerChip.hidden = !on;
-  if (on) { const r = roomById(S.career.room); careerChip.textContent = `${r.place} · ${money(Career.load().bankroll)}`; }
+  if (on) { const r = roomById(S.career.room); careerChip.innerHTML = `<b>${Cal.short()}</b> · ${escH(r.place)} · ${money(Career.load().bankroll)}`; }
 }
 let lobTab = 'rooms';
 function openLobby() {
@@ -210,7 +247,7 @@ function openLobby() {
 }
 function renderLobby() {
   const d = Career.load(), lvl = Career.level(), lo = Career.xpAt(lvl), hi = Career.xpAt(lvl + 1);
-  $('#lobBank').textContent = money(d.bankroll); $('#lobLvl').textContent = lvl;
+  $('#lobBank').textContent = money(d.bankroll); $('#lobLvl').textContent = lvl; $('#lobDate').textContent = Cal.long();
   $('#lobXp').style.width = `${clamp((d.xp - lo) / (hi - lo), 0, 1) * 100}%`;
   const db = $('#lobDaily'), claimed = d.bonusDay === Career.today(), b = Career.dailyBonus();
   db.disabled = claimed; db.textContent = claimed ? 'Daily chips claimed · come back tomorrow' : `Claim daily chips · ${money(b.amt)}${b.streak > 1 ? ` · day ${b.streak} streak` : ''}`;

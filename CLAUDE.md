@@ -56,7 +56,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `06-engine3d.js` | 3D engine | Scene, camera fit, table (`G`), cards, chips, `animate`, `HeadFire`. |
 | `07-people.js` | 3D people | `Person` (body, face, IK arms, gestures), dealer, waitress, seat labels. |
 | `08-tricks.js` | Table tricks | Anger, `taunt`, `tipDealer`, AI bribes, the rig. |
-| `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Achv`, `Daily`, bounties, lobby. |
+| `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Cal` (game calendar), `Achv`, `Daily`, bounties, lobby. |
 | `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`. |
 | `11-stage1.js` | Stage 1 | Tilt, celebrations, `heroTap`, `heroThrow`, slow-roll, side bets, `Jackpot`. |
 | `12-casino.js` | Stage 4 | `Casino` (own scene/camera), `BJ` blackjack, `RL` roulette. |
@@ -110,6 +110,7 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 | `selfplay3d.py` | Main regression. Must print `viol: []` for every game and no page errors. |
 | `selfplay_ko.py` | Same for bounty Sit & Gos. |
 | `pwa.py` | Manifest and icons load, the service worker caches the game, the table starts offline. |
+| `gamecal.py 0` / `gamecal.py 1` | Calendar: date maths, day/week/month events, 4 h per hand, 2 h per casino round (phone / desktop). |
 | `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
 | `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
 | `stage1.py`, `stage2s.py`, `stage3.py` | Side bets and reactions; the waitress; career lobby. |
@@ -142,9 +143,22 @@ The game skips service-worker registration under test automation
   (https://claude.ai/artifact/4pxB58D35P128yb7xXy2GW) is the single-file version
   from before the split. It is not updated any more.
 
-## Upgrade plan (agreed order, not started)
+## Calendar (`Cal` in `09-career.js`)
 
-1. Calendar that runs while you play (the base for the bank and jail).
+- Runs in Career mode only and moves only while you play: `Cal.advance('hand')`
+  in `afterHand` (4 hours), `Cal.advance('casino')` after each blackjack round and
+  roulette spin (2 hours). Skipped when `S.test`.
+- Stored as minutes since the start in the career save: `Career.load().cal.min`.
+  Minute 0 = Monday 1 January, Year 1, 8 PM (date maths uses 2024, which starts
+  on a Monday). `Cal.parts()` gives year, month, day, weekday, hour, `firstWeek`.
+- Shown in the career chip on the table, the casino top bar and the lobby.
+  A new day shows a toast, a new month a banner.
+- Other systems subscribe with `Cal.on(fn)`; `fn({ type: 'day'|'week'|'month', from, to })`.
+- Daily chips and daily challenges still follow the real date (not changed yet).
+
+## Upgrade plan (agreed order)
+
+1. ~~Calendar that runs while you play~~ — done (see above).
 2. Bank: loans offered from your play style and history, interest, repayment in the
    first week of each month; deposits where a higher rate locks the money longer.
 3. Drinks with effects: a buzz meter (a small boost), drunk mistakes for AI and

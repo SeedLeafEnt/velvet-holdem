@@ -599,6 +599,7 @@ async function clearTable() {
 async function afterHand() {
   S.history.unshift({ no: S.handNo, blinds: `${fmt(S.sb)}/${fmt(S.bb)}${S.ante ? ' · ante ' + fmt(S.ante) : ''}`, lines: S.log.slice() });
   if (S.history.length > 40) S.history.pop();
+  if (S.career) Cal.advance('hand'); // game time: 4 hours a hand
   await clearTable();
   const hero = S.players[0];
   const busted = S.players.filter(p => !p.out && p.chips <= 0);
