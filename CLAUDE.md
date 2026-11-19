@@ -56,6 +56,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `06-engine3d.js` | 3D engine | Scene, camera fit, table (`G`), cards, chips, `animate`, `HeadFire`. |
 | `07-people.js` | 3D people | `Person` (body, face, IK arms, gestures), dealer, waitress, seat labels. |
 | `08-tricks.js` | Table tricks | Anger, `taunt`, `tipDealer`, AI bribes, the rig. |
+| `08b-police.js` | Police, jail | Heat, `Police` (patrol, arrests, siren), `Jail` (bail, the guard game), `showArrested`. |
 | `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Cal` (game calendar), `Achv`, `Daily`, bounties, lobby. |
 | `09b-bank.js` | Bank | `Bank`: credit score, play style, loans, savings, the lobby's Bank tab. |
 | `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`; buzz (`drinkUp`, `applyBuzzLuck`, `drunkAdjust`, `drunkHero`), `DrinkOffer`. |
@@ -113,6 +114,7 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 | `pwa.py` | Manifest and icons load, the service worker caches the game, the table starts offline. |
 | `gamecal.py 0` / `gamecal.py 1` | Calendar: date maths, day/week/month events, 4 h per hand, 2 h per casino round (phone / desktop). |
 | `drinks.py 0` / `drinks.py 1` | Drinks: buzz stages, luck rate and deck integrity, drunk mistakes, drink offers (they pay, refuse is free), chips balance; screenshots. |
+| `police.py 0` / `police.py 1` | Police: catch odds, an opponent arrested (stack seized, chips balance), patrol, hero arrested (quick game over / Career jail), jail blocks rooms and casino, lose/win/bail; screenshots. |
 | `bank.py 0` / `bank.py 1` | Bank: score, offer, borrow, interest due in week 1, on-time and missed payments, savings, early withdrawal; screenshots. |
 | `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
 | `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
@@ -198,13 +200,34 @@ The game skips service-worker registration under test automation
 - `DrinkOffer`: between hands (6% a hand) an opponent offers you a drink; Accept or
   No thanks (12 s, then it lapses). They pay (`S.bar`), so chips still balance.
 
+## Police and jail (`08b-police.js`)
+
+- Bribes are accepted more often (`TIP_SIZES`: small 50%, big 80%) but every bribe
+  offer calls `Police.onBribe`: `p.heat` +22 / +35 (0–100, −2 each hand in `heatTick`).
+  The hero's heat is kept in the career save (`Career.load().heat`) between career games.
+- Catch chance = clamp((heat − 30) / 100, 0, 0.85), × 1.8 while a cop patrols
+  (`Police.patrol` hands left; 12% a hand to start; "Police on patrol" sign, a walking
+  officer `LOOKS.copWalk`). Spotted players go into `Police.wanted`.
+- Arrests run in `afterHand` right after `clearTable` (`Police.arrests`): siren glow +
+  sound, the officer walks over (`Bar.route` / `Bar.approach`), an "Arrested" banner,
+  the player fades out. Capped at 12 s so the table never stops; skipped when `S.test`.
+  An arrested opponent's stack goes to `S.house` (chips still balance) and the usual
+  bust code handles the seat. The hero: chips seized, `Police.heroCaught` →
+  `showArrested` (quick game over) or `Jail.lockUp` (Career).
+- Jail: `Career.load().jail = { since, bail, games }`, `arrests` counts them. Rooms and the
+  casino are blocked (`startCareerGame`, `Casino.enter`); the lobby shows `Jail.render`.
+  Bail = max($200, $300 + 20% of bankroll + $150 per earlier arrest). Or `Jail.play`:
+  a heads-up Sit & Go (`S.jail`, `Jail.seat`) against Sgt. Malone (persona `cop`,
+  non-enumerable so it is never dealt into normal games); other seats are `gone`.
+  `showEnd` → `Jail.end`: win frees you, a loss keeps you locked up. No bribes, drinks or
+  saves in a jail game; game time still moves.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).
 2. ~~Bank: loans, interest due in the first week, savings with a chosen rate~~ — done (see above).
 3. ~~Drinks with effects: buzz, luck, drunk mistakes, drink offers~~ — done (see above).
-4. Bribes and police: higher bribe acceptance, a heat meter, a patrolling cop,
-   an arrest animation, jail (pay bail or win a game against the cops).
+4. ~~Bribes and police: heat, patrol, arrests, jail~~ — done (see above).
 5. UI/UX: city-map menu, an in-game phone (calendar, bank, messages), livelier
    characters, cinematic all-in and river moments, day/night lighting.
 6. Voices last (ElevenLabs, about 14,600 credits): write and approve the lines

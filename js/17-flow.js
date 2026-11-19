@@ -23,8 +23,10 @@ function newGame(mode, level, restore, structure, opts) {
   if (S.heroReject) { const rj = S.heroReject; S.heroResolve = S.heroReject = null; try { rj(ABORT); } catch (e) {} }
   clearTimeout(heroTurn._slow);
   resetTableVisuals(); FX.parts = []; Voice.stop();
-  clearAnger(); DrinkOffer.clear(); S.sideFlop = null; S.house = 0; S.bar = 0; S.heroSlowRoll = -1; S.koCount = 0; S.koWon = 0;
+  clearAnger(); DrinkOffer.clear(); Police.reset(); S.sideFlop = null; S.house = 0; S.bar = 0; S.heroSlowRoll = -1; S.koCount = 0; S.koWon = 0;
   if (opts) S.ko = opts.ko || 0; else if (restore) S.ko = restore.ko || 0;
+  S.jail = !!(opts && opts.jail);
+  if (!restore && !S.career && !S.jail) BUYIN = 20;
   if (restore) { S.career = restore.career || null; BUYIN = S.career ? S.career.buyin : 20; applyTheme(S.career ? roomById(S.career.room) : null); }
   Object.assign(S, { mode, level, board: [], pot: 0, currentBet: 0, frc: 0, inHand: false, betweenHands: true, toAct: -1, pre: null, raising: false, runout: false, started: true, log: [], tips: 0, rig: null, bribedHand: -1 });
   lastTauntAt = 0;
@@ -43,6 +45,8 @@ function newGame(mode, level, restore, structure, opts) {
     const pers = shuffled(Object.keys(PERSONAS)).slice(0, NS - 1), cols = shuffled([...Array(AV_COLORS.length).keys()]), used = new Set();
     S.players = [makePlayer(0, 'You', 'pro', stack, 0, true)].concat(pers.map((ps, k) => { const n = nameFor(ps, used); used.add(n); return makePlayer(k + 1, n, ps, stack, cols[k]); }));
     if (S.ko && mode === 'sng') S.players.forEach(p => p.bounty = S.ko);
+    if (S.jail) Jail.seat(); // you against the guard
+    if (S.career) S.players[0].heat = Career.load().heat || 0; // heat follows you between career games
     S.handNo = 0; S.blindIdx = 0; S.button = Math.floor(Math.random() * NS); S.heroBuyin = stack;
     S.stats = { hands: 0, won: 0, biggest: 0, best: -1 }; S.history = []; S.ann = {};
     S.hm = { faced: 0, foldFaced: 0, aggr: 0, pass: 0 };
@@ -124,14 +128,14 @@ async function playHand() {
     if (!p.folded) { p.startStack = p.chips; p.st.hands++; }
   }
   const hero = S.players[0]; if (!hero.out) { S.stats.hands++; Achv.ev('hand'); }
-  angerTick(); buzzTick();
+  angerTick(); buzzTick(); heatTick(); Police.handStart();
   seatEls.forEach(e => e.classList.remove('winner')); clearTags(); for (let i = 0; i < NS; i++) setEq(i, null);
   applySpeedVar(); renderSeats(); renderPot(); renderTop(); renderDock();
 
   const act = S.players.filter((p, i) => isActiveSeat(i));
   if (S.mode === 'sng') {
     if (act.length === 3 && !S.ann.bubble) { S.ann.bubble = true; toast('Money bubble · top 2 get paid', 3000); dealerSay('bubble', "We're on the money bubble."); }
-    if (act.length === 2 && !S.ann.hu) { S.ann.hu = true; toast('Heads-up for the title', 3000); setTimeout(() => dealerSay('headsUp', "We're heads up."), 2600); }
+    if (act.length === 2 && !S.ann.hu && !S.jail) { S.ann.hu = true; toast('Heads-up for the title', 3000); setTimeout(() => dealerSay('headsUp', "We're heads up."), 2600); }
   }
   S.button = nextFrom(S.button, isActiveSeat);
   placeDealer(false);
@@ -605,8 +609,9 @@ async function afterHand() {
     const h = S.players[0]; // career play style, for the bank's credit check
     if (h && dealtIn(h)) { Achv.count('chands'); if (h.vpipHand) Achv.count('cvpip'); if (h.pfrHand) Achv.count('cpfr'); }
     Cal.advance('hand'); // game time: 4 hours a hand
-  }
+  } else if (S.jail) Cal.advance('hand');
   await clearTable();
+  if (await Police.arrests()) return Police.heroCaught(); // arrests for bribing happen between hands
   const hero = S.players[0];
   const busted = S.players.filter(p => !p.out && p.chips <= 0);
   for (const p of busted) calmDown(p, true);
@@ -617,7 +622,7 @@ async function afterHand() {
     busted.sort((a, b) => b.startStack - a.startStack).forEach((p, k) => {
       p.out = true; p.place = remaining + k + 1;
       if (!p.isHero) {
-        toast(`${p.name} is out in ${ordinal(p.place)} place${prizeFor(p.place) ? ` · wins $${prizeFor(p.place)}` : ''}`, 3000);
+        toast(`${p.name} ${p.arrested ? 'was arrested and finishes' : 'is out in'} ${ordinal(p.place)} place${prizeFor(p.place) ? ` · wins $${prizeFor(p.place)}` : ''}`, 3000);
         dealerSay('eliminated', `${p.name} is out, in ${ordinal(p.place)} place.`);
         react(p, 'bust', { say: false }); Chat.say(p, 'bust', { force: true, raw: true });
         const pp = people[p.i]; if (pp && !S.test) setTimeout(() => { pp.gesture('wave', 1.2); setTimeout(() => { bg(pp.fade(0, 900)); setTimeout(() => { if (Bar.drinks[p.i] && S.players[p.i] && S.players[p.i].out) { Bar.drinks[p.i].dispose(); Bar.drinks[p.i] = null; } }, 900); }, 1300); }, 2200);
@@ -633,7 +638,7 @@ async function afterHand() {
       react(p, 'bust', { say: false }); Chat.say(p, 'bust', { force: true, raw: true });
       const leaving = people[p.i];
       await delay(2000);
-      if (leaving && !S.test) { leaving.gesture('wave', 1); await delay(900); await leaving.fade(0, 800).catch(() => {}); }
+      if (leaving && !S.test && !p.arrested) { leaving.gesture('wave', 1); await delay(900); await leaving.fade(0, 800).catch(() => {}); }
       const seated = new Set(S.players.map(q => q.name));
       const pers = shuffled(Object.keys(PERSONAS))[0];
       const name = nameFor(pers, seated);

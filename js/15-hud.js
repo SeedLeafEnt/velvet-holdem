@@ -6,14 +6,14 @@
    ========================================================= */
 function renderSeat(i) {
   const p = S.players[i], el = seatEls[i];
-  if (!p) { el.hidden = true; if (i) headEls[i].hidden = true; return; }
+  if (!p || p.gone) { el.hidden = true; if (i) headEls[i].hidden = true; return; }
   el.hidden = false; if (i) headEls[i].hidden = false;
   el.querySelector('.nm').textContent = p.isHero ? 'You' : p.name;
   el.querySelector('.stk').textContent = p.out ? (S.mode === 'sng' && p.place ? `Out · ${ordinal(p.place)}` : 'Out') : (p.allIn && S.inHand ? 'All-in' : fmt(p.chips));
   el.classList.toggle('out', p.out);
   el.classList.toggle('folded', S.inHand && !p.out && p.folded);
   setPile('stack' + i, p.out ? 0 : p.chips);
-  renderBuzz(i);
+  renderBuzz(i); renderHeat(i);
 }
 function renderBet(i) {
   const p = S.players[i], l = betLbls[i];

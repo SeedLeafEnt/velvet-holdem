@@ -14,6 +14,8 @@ const LOOKS = {
   pro:     { g: 'm', hair: 'short', glasses: true, top: '#24324c', top2: '#dfe6ee', hairCol: '#2b2420' },
   dealer:  { g: 'm', hair: 'short', dealer: true, top: '#141418', top2: '#f4f4f2', hairCol: '#1d1714' },
   waitress: { g: 'f', hair: 'bun', top: '#7a1630', top2: '#f4efe6', hairCol: '#2a1810', standing: true },
+  cop:      { g: 'm', hair: 'short', cap: true, badge: true, top: '#1f2f55', top2: '#dfe6f0', hairCol: '#2a1a10', hatCol: '#111a33' },
+  copWalk:  { g: 'm', hair: 'short', cap: true, badge: true, top: '#1f2f55', top2: '#dfe6f0', hairCol: '#2a1a10', hatCol: '#111a33', standing: true, pants: '#18213b' },
 };
 const SKINS = ['#f2c9a8', '#e3b08a', '#c98f66', '#a46c47', '#7c4d30', '#f6dcc6'];
 const FACES = {
@@ -99,9 +101,10 @@ class Person {
         PGEO.skirt = new THREE.LatheGeometry([[0, 0.02], [0.104, 0.02], [0.118, -0.1], [0.148, -0.43], [0, -0.43]].map(([x, y]) => new THREE.Vector2(x, y)), 20);
         PGEO.leg = new THREE.CylinderGeometry(0.027, 0.021, 0.94, 10); PGEO.shoe = new THREE.BoxGeometry(0.05, 0.03, 0.1);
       }
-      const sk = mesh(PGEO.skirt, M('#16161b', 0.85), this.root, 0, HIP_Y, -0.02);
-      const mLeg = M('#3a2c2a', 0.45), mShoe = M('#0e0e10', 0.35);
-      this.legs = [1, -1].map(sg => { const g = new THREE.Group(); g.position.set(sg * 0.055, HIP_Y - 0.02, -0.02); this.root.add(g); mesh(PGEO.leg, mLeg, g, 0, -0.47, 0); mesh(PGEO.shoe, mShoe, g, 0, -0.945, 0.03); return g; });
+      if (L.pants) { if (!PGEO.hips) PGEO.hips = new THREE.CylinderGeometry(0.15, 0.13, 0.16, 18); mesh(PGEO.hips, M(L.pants, 0.8), this.root, 0, HIP_Y - 0.06, -0.02); }
+      else mesh(PGEO.skirt, M('#16161b', 0.85), this.root, 0, HIP_Y, -0.02);
+      const mLeg = M(L.pants || '#3a2c2a', L.pants ? 0.8 : 0.45), mShoe = M('#0e0e10', 0.35);
+      this.legs = [1, -1].map(sg => { const g = new THREE.Group(); g.position.set(sg * 0.055, HIP_Y - 0.02, -0.02); this.root.add(g); const lg = mesh(PGEO.leg, mLeg, g, 0, -0.47, 0); if (L.pants) lg.scale.set(1.8, 1, 1.8); mesh(PGEO.shoe, mShoe, g, 0, -0.945, 0.03); return g; });
       this.walkPh = 0; this.walkAmt = 0;
     }
     // Torso
@@ -115,6 +118,7 @@ class Person {
     } else {
       const c = mesh(PGEO.collar, mTop2, this.torso, 0, 0.545, 0.0, false); c.rotation.x = Math.PI / 2; c.scale.set(1, 0.85, 1);
     }
+    if (L.badge) { const b = mesh(PGEO.knot, M('#e2b847', 0.3, { metalness: 0.8 }), this.torso, 0.075, 0.42, 0.09, false); b.scale.set(1.9, 2.2, 0.6); }
     mesh(PGEO.neck, mSkin, this.torso, 0, 0.59, 0);
     // Head
     this.head = new THREE.Group(); this.head.position.set(0, 0.625, 0.005); this.torso.add(this.head);
@@ -457,6 +461,7 @@ function updatePeople(now) {
   fireScale();
   for (let i = 1; i < NS; i++) { const q = people[i]; if (!q) continue; if (q.root.visible) q.update(dt, t); else if (q.fire) { q.fire.fl.pts.visible = q.fire.sm.pts.visible = false; } }
   Bar.update(dt, t);
+  Police.update(dt, t);
   if (dealerP) {
     dealerP.update(dt, t);
     if (dealerP.holding && deckMesh) { dealerP.handWorld(0, _hw); deckMesh.position.set(_hw.x, _hw.y + 0.028, _hw.z); deckMesh.rotation.y = dealerP.root.rotation.y; A.deck.copy(deckMesh.position); }
@@ -556,8 +561,8 @@ const seatEls = [], betLbls = [], headEls = [];
 for (let i = 0; i < NS; i++) {
   const s = document.createElement('div'); s.className = 'seat' + (i === 0 ? ' hero' : ''); s.dataset.i = i;
   s.innerHTML = i === 0
-    ? `<div class="flames" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bubble"></div><div class="plate"><div class="nm"></div><div class="stk"></div></div><div class="bty" hidden></div><div class="buzzb" hidden></div><div class="tag"></div><div class="eqb"></div>`
-    : `<div class="plate"><div class="nm"></div><div class="stk"></div><i class="tbar"></i></div><div class="fume" aria-hidden="true">Fuming</div><div class="rivb" aria-hidden="true">Rival</div><div class="bty" hidden></div><div class="buzzb" hidden></div><div class="eqb"></div>`;
+    ? `<div class="flames" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bubble"></div><div class="plate"><div class="nm"></div><div class="stk"></div></div><div class="bty" hidden></div><div class="pills"><div class="buzzb" hidden></div><div class="heatb" hidden></div></div><div class="tag"></div><div class="eqb"></div>`
+    : `<div class="plate"><div class="nm"></div><div class="stk"></div><i class="tbar"></i></div><div class="fume" aria-hidden="true">Fuming</div><div class="rivb" aria-hidden="true">Rival</div><div class="bty" hidden></div><div class="pills"><div class="buzzb" hidden></div><div class="heatb" hidden></div></div><div class="eqb"></div>`;
   s.querySelector('.plate').addEventListener('click', e => { e.stopPropagation(); if (typeof plateTap === 'function') plateTap(i, e.currentTarget); else openPlayer(i); });
   overlayEl.appendChild(s); seatEls.push(s);
   const h = document.createElement('div'); h.className = 'head';

@@ -15,14 +15,14 @@ function renderTalk() {
   }
   $('#tauntNote').textContent = h.out ? '' : cd > 0 ? `Ready again in ${Math.ceil(cd / 1000)}s` : 'Hotheads anger easily. Steady players rarely.';
   const pg = $('#tipGrid'); pg.innerHTML = '';
-  for (const [size, label, note] of [['small', 'Tip', 'small chance'], ['big', 'Slip', 'better chance']]) {
+  for (const [size, label, note] of [['small', 'Tip', 'works half the time'], ['big', 'Slip', 'usually works']]) {
     const b = document.createElement('button'), amt = tipAmount(size);
     b.innerHTML = `${label} ${fmt(amt)}<small>${note}</small>`;
     b.disabled = !canTip(h, size);
     b.addEventListener('click', () => { closeOverlay('chatScreen'); Sound.tick(); tipDealer(h, size); });
     pg.appendChild(b);
   }
-  $('#tipNote').textContent = h.out ? '' : h.tippedHand === S.handNo ? 'You already tipped this hand' : (h.chips <= tipAmount('small') * 2 ? 'Not enough chips' : 'If the dealer bites, your next cards get better. Either way, the dealer keeps the tip.');
+  $('#tipNote').textContent = h.out ? '' : h.tippedHand === S.handNo ? 'You already tipped this hand' : (h.chips <= tipAmount('small') * 2 ? 'Not enough chips' : `If the dealer bites, your next cards get better. Every bribe adds police heat${(h.heat || 0) ? ` (now ${h.heat})` : ''}${Police.patrol > 0 ? ', and a cop is watching' : ''}. Too much and you get arrested.`);
   renderTalkMore();
 }
 /* ---------- Tap a person to act: dealer, opponents, and your own seat ---------- */
@@ -57,8 +57,8 @@ const Act = {
       this.btn(grid, 'Nice hand', false, () => heroSayTo(p, 'niceHand', 'Nice hand'));
       this.btn(grid, `Profile &amp; history<small>Their style, your record together</small>`, false, () => openPlayer(i), 'wide');
     } else if (kind === 'dealer') {
-      head.innerHTML = '<b>Dealer</b><span>Tips, drinks and side bets</span>';
-      for (const [size, label, note] of [['small', 'Tip', 'small chance'], ['big', 'Slip', 'better chance']]) this.btn(grid, `${label} ${fmt(tipAmount(size))}<small>${h.tippedHand === S.handNo ? 'Already tipped this hand' : note}</small>`, !canTip(h, size), () => { Sound.tick(); tipDealer(h, size); });
+      head.innerHTML = `<b>Dealer</b><span>Tips, drinks and side bets${Police.patrol > 0 ? ' · <em class="hot">Police watching</em>' : (h.heat || 0) >= 30 ? ` · <em class="hot">Heat ${h.heat}</em>` : ''}</span>`;
+      for (const [size, label, note] of [['small', 'Tip', 'works half the time'], ['big', 'Slip', 'usually works']]) this.btn(grid, `${label} ${fmt(tipAmount(size))}<small>${h.tippedHand === S.handNo ? 'Already tipped this hand' : note}</small>`, !canTip(h, size), () => { Sound.tick(); tipDealer(h, size); });
       const price = drinkPrice(), broke = h.out || h.chips <= price * 3;
       const dr = document.createElement('div'); dr.className = 'ag4'; actEl.appendChild(dr);
       const lab = document.createElement('p'); lab.className = 'anote'; lab.textContent = `Order a drink · ${fmt(price)}`; actEl.insertBefore(lab, dr);

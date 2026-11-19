@@ -5,8 +5,8 @@
    Table tricks: tipping the dealer, and needling opponents
    ========================================================= */
 const escH = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
-const TIP_SIZES = { small: { bb: 2, chance: 0.3 }, big: { bb: 5, chance: 0.55 } };
-const BRIBE_RATE = { maniac: 0.07, shark: 0.045, station: 0.035, rock: 0.012, pro: 0.008 };
+const TIP_SIZES = { small: { bb: 2, chance: 0.5 }, big: { bb: 5, chance: 0.8 } }; // the police keep this in check (08b-police.js)
+const BRIBE_RATE = { maniac: 0.1, shark: 0.065, station: 0.05, rock: 0.018, pro: 0.012 };
 const TAUNT_RATE = { maniac: 0.4, shark: 0.26, station: 0.06, rock: 0.05, pro: 0.045 };
 const ANGER_CHANCE = { maniac: 0.62, shark: 0.36, station: 0.3, rock: 0.16, pro: 0.12, hero: 0.35 };
 /* '@cat:k' reuses the k-th recorded line of that category, so it plays in the character's real voice */
@@ -143,7 +143,7 @@ function maybeAITaunt(p, mult, targets) {
 
 /* ---------- Tipping the dealer ---------- */
 const tipAmount = size => Math.max(5, r5(S.bb * TIP_SIZES[size].bb));
-const canTip = (p, size) => !!p && !p.out && S.started && p.chips > tipAmount(size) * 2 && p.tippedHand !== S.handNo;
+const canTip = (p, size) => !!p && !p.out && S.started && !S.jail && p.chips > tipAmount(size) * 2 && p.tippedHand !== S.handNo;
 let tipBusy = Promise.resolve();
 function tipDealer(p, size) {
   if (!canTip(p, size)) return Promise.resolve(false);
@@ -152,6 +152,7 @@ function tipDealer(p, size) {
   const ok = !S.rig && Math.random() < TIP_SIZES[size].chance;
   if (ok) S.rig = { i: p.i };
   if (ok && p.isHero) Achv.ev('tipOk');
+  Police.onBribe(p, size); // every bribe offer adds heat and may be spotted
   logLine(`${p.name} tips the dealer ${fmt(amt)}`);
   renderSeat(p.i); renderTop(); if (p.isHero) renderDock();
   if (S.test) return Promise.resolve(ok);

@@ -198,6 +198,7 @@ function roomById(id) { return ROOMS.find(r => r.id === id) || ROOMS[0]; }
 function careerCost(r, kind) { return kind === 'cash' ? r.cash : kind === 'sng' ? r.sng : r.ko[0] + r.ko[1]; }
 function startCareerGame(roomId, kind) {
   const r = roomById(roomId), cost = careerCost(r, kind);
+  if (Jail.data()) { toast('You are in jail', 2000); return false; }
   if (!Career.spend(cost)) { toast('Not enough in your bankroll', 2000); return false; }
   Achv.count('cbuyin', cost);
   S.career = { room: r.id, kind, buyin: kind === 'cash' ? r.cash : kind === 'sng' ? r.sng : r.ko[0], bounty: kind === 'ko' ? r.ko[1] : 0 };
@@ -268,7 +269,8 @@ function renderLobby() {
   if (lobTab === 'bank') Bank.render($('#lobBankPane'));
   // rooms
   const rooms = $('#lobRooms'); rooms.innerHTML = '';
-  for (const r of ROOMS) {
+  if (Jail.data()) Jail.render(rooms); // locked up: no rooms, no casino
+  else for (const r of ROOMS) {
     const open = !!d.rooms[r.id], card = document.createElement('div'); card.className = 'room' + (open ? '' : ' locked'); card.style.setProperty('--acc', r.accent);
     card.style.setProperty('--felt', r.felt[1]);
     card.innerHTML = `<div class="rh"><i class="sw"></i><div><b>${r.name}</b><span>${r.place} · ${r.level === 'sharp' ? 'Sharp players' : 'Relaxed players'}</span></div></div>`;
@@ -305,4 +307,4 @@ document.querySelectorAll('#lobTabs button').forEach(b => b.addEventListener('cl
 $('#lobDaily').addEventListener('click', () => { Career.claimDaily(); renderLobby(); });
 $('#lobBail').addEventListener('click', () => { const d = Career.load(); d.lastBail = Date.now(); Career.save(); Career.add(200, 'From the house'); renderLobby(); });
 $('#btnCareer').addEventListener('click', () => { unlockAudio(); openLobby(); });
-function renderStartCareer() { const d = Career.load(); $('#btnCareer').innerHTML = `Career mode<small>${money(d.bankroll)} bankroll · Level ${Career.level()}</small>`; }
+function renderStartCareer() { const d = Career.load(); $('#btnCareer').innerHTML = `Career mode<small>${d.jail ? 'In jail · ' : ''}${money(d.bankroll)} bankroll · Level ${Career.level()}</small>`; }

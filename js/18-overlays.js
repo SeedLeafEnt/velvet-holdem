@@ -19,6 +19,7 @@ function payoutBoxes() { return `<div class="payouts" style="grid-template-colum
 function showEnd(kind) {
   const hero = S.players[0];
   Clock.stop();
+  if (S.jail) return Jail.end(kind);
   const place = kind === 'champ' ? 1 : hero.place;
   Achv.ev('sngPlace', { place });
   if (S.career && !S.test) { Achv.count('csng'); if (prizeFor(place)) Achv.count('citm'); }

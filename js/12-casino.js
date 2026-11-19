@@ -65,10 +65,11 @@ const Casino = {
   enter(kind, roomId) {
     if (!this.init()) { toast('3D graphics are unavailable', 2000); return; }
     const d = Career.load(); this.room = roomById(roomId); const lim = TABLE_LIMITS[this.room.id];
+    if (d.jail) { toast('You are in jail', 2000); return; }
     if (d.bankroll < lim[0]) { toast('Not enough in your bankroll', 2000); return; }
     if (S.heroReject) { const rj = S.heroReject; S.heroResolve = S.heroReject = null; try { rj(ABORT); } catch (e) {} }
     autoCashOutSaved(); clearSave(); S.started = false; RUN++; Clock.stop(); Voice.stop();
-    DrinkOffer.clear(); stageEl.classList.remove('tipsy', 'drunk');
+    DrinkOffer.clear(); Police.reset(); stageEl.classList.remove('tipsy', 'drunk');
     ['lobby', 'startScreen', 'endScreen', 'menuScreen'].forEach(closeOverlay); unlockAudio();
     applyTheme(this.room);
     this.leaveAll(); this.active = kind; this.chip = 0; d.visited[this.room.id] = true; Career.save();

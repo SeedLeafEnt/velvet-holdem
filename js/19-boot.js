@@ -9,6 +9,7 @@ function saveSettings() { try { localStorage.setItem(SET_KEY, JSON.stringify(set
 function loadSettings() { try { const s = JSON.parse(localStorage.getItem(SET_KEY) || 'null'); if (s) Object.assign(settings, s); } catch (e) {} if (!CARD_STYLES[settings.cardStyle]) settings.cardStyle = 'classic'; }
 function snapshotBetween(finished) {
   if (finished) { S.saved = null; clearSave(); return; }
+  if (S.jail) return; // a jail game cannot be resumed
   S.saved = {
     v: 2, mode: S.mode, level: S.level, structure: S.structure, handNo: S.handNo, blindIdx: S.blindIdx, button: S.button, heroBuyin: S.heroBuyin, career: S.career || null, ko: S.ko || 0,
     stats: S.stats, hm: S.hm, ann: S.ann, clockLeft: Clock.left,
@@ -91,4 +92,4 @@ try { VO.prefetch(); } catch (e) {}
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !navigator.webdriver) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
-window.__velvet = { Act, Casino, BJ, RL, Career, Cal, Bank, buzzStage, drinkUp, buzzTick, renderBuzz, applyBuzzLuck, drunkAdjust, drunkHero, DrinkOffer, aiDecide, CHEN, BUZZ, Bar, heroOrder, sendDrink, cam: () => camera, Music, Sound, tipDealer, taunt, setAngry, isAngry, calmDown, renderTalk, applyRigBoard, applyRigHole, people: () => people, dealer: () => dealerP, react, VO, run: () => RUN, anims: () => anims.length, S, evaluate, handName, buildPots, newGame, runoutEquity, equity, settings, Cards, setView, G, A, piles, liveCards, Clock, showBubble, layout };
+window.__velvet = { Act, Casino, BJ, RL, Career, Cal, Bank, Police, Jail, addHeat, buzzStage, drinkUp, buzzTick, renderBuzz, applyBuzzLuck, drunkAdjust, drunkHero, DrinkOffer, aiDecide, CHEN, BUZZ, Bar, heroOrder, sendDrink, cam: () => camera, Music, Sound, tipDealer, taunt, setAngry, isAngry, calmDown, renderTalk, applyRigBoard, applyRigHole, people: () => people, dealer: () => dealerP, react, VO, run: () => RUN, anims: () => anims.length, S, evaluate, handName, buildPots, newGame, runoutEquity, equity, settings, Cards, setView, G, A, piles, liveCards, Clock, showBubble, layout };

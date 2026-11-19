@@ -209,6 +209,7 @@ const Bar = {
 const drinkPrice = () => Math.max(5, r5(S.bb));
 function heroOrder(type) {
   const h = S.players[0], cost = drinkPrice(); if (h.out || h.chips <= cost * 3) return;
+  if (S.jail) { toast('No drinks in jail', 1600); return; }
   h.chips -= cost; S.bar = (S.bar || 0) + cost; renderSeat(0); renderDock();
   toast(`${DRINKS[type].label} on its way`, 1600); Sound.chips(1, 0.4);
   Bar.order(0, type, { done: () => {
@@ -219,6 +220,7 @@ function heroOrder(type) {
 }
 function sendDrink(p) {
   const h = S.players[0], cost = drinkPrice(); if (h.out || p.out || h.chips <= cost * 3) return;
+  if (S.jail) { toast('No drinks in jail', 1600); return; }
   h.chips -= cost; S.bar = (S.bar || 0) + cost; renderSeat(0); renderDock();
   showBubble(0, `A drink for ${p.name}, on me.`); Sound.chips(1, 0.4);
   const type = FAV_DRINK[p.persona] || 'whisky';
@@ -318,7 +320,7 @@ const offerEl = document.createElement('div'); offerEl.className = 'drinkoffer';
 const DrinkOffer = {
   cur: null,
   maybe() { // between hands, now and then
-    if (S.test || this.cur || !S.started) return;
+    if (S.test || this.cur || !S.started || S.jail) return;
     const h = S.players[0], cost = drinkPrice(); if (!h || h.out) return;
     const cands = S.players.filter(p => !p.isHero && !p.out && p.chips > cost * 4);
     if (!cands.length || Math.random() > 0.06) return;
