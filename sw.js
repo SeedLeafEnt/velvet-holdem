@@ -2,8 +2,8 @@
    Code (HTML/CSS/JS) is network-first, so a new version shows up as soon as you are online.
    Everything else (three.js, fonts, icons, voices) is cache-first.
    Bump VERSION when the file list changes. */
-const VERSION = 'velvet-v1';
-const JS = ['00-three', '01-core', '02-audio', '03-fx', '04-personas', '05-state', '06-engine3d', '07-people', '08-tricks', '09-career',
+const VERSION = 'velvet-v2';
+const JS = ['00-three', '01-core', '02-audio', '03-fx', '04-personas', '05-state', '06-engine3d', '07-people', '08-tricks', '09-career', '09b-bank',
   '10-bar', '11-stage1', '12-casino', '13-talk-act', '14-render', '15-hud', '16-ai', '17-flow', '18-overlays', '19-boot'].map(n => `js/${n}.js`);
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/style.css', 'css/fonts.css', ...JS,
   'vendor/three/three.module.js', 'vendor/three/addons/environments/RoomEnvironment.js',

@@ -76,6 +76,10 @@ const Cal = {
   hourText(h) { return h === 0 ? 'Midnight' : h === 12 ? 'Noon' : `${h % 12} ${h < 12 ? 'AM' : 'PM'}`; },
   short(min) { const p = this.parts(min); return `${CAL_DOW[p.dow].slice(0, 3)} ${p.day} ${CAL_MON[p.month].slice(0, 3)} · ${this.hourText(p.hour)}`; },
   long(min) { const p = this.parts(min); return `${CAL_DOW[p.dow]} ${p.day} ${CAL_MON[p.month]}, Year ${p.year} · ${this.hourText(p.hour)}`; },
+  dateText(min) { const p = this.parts(min); return `${CAL_DOW[p.dow].slice(0, 3)} ${p.day} ${CAL_MON[p.month].slice(0, 3)}`; },
+  // minutes at midnight starting day `day` of the month `addMon` months after `min`'s month
+  monthDay(min, day, addMon = 0) { const t = new Date(CAL_BASE + min * 60000); return (Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + addMon, day) - CAL_BASE) / 60000; },
+  addMonths(min, n) { const t = new Date(CAL_BASE + min * 60000); t.setUTCMonth(t.getUTCMonth() + n); return (t.getTime() - CAL_BASE) / 60000; },
   on(fn) { this.subs.push(fn); },
   advance(kind) {
     if (S.test || !CAL_STEP[kind]) return;
@@ -195,6 +199,7 @@ function careerCost(r, kind) { return kind === 'cash' ? r.cash : kind === 'sng' 
 function startCareerGame(roomId, kind) {
   const r = roomById(roomId), cost = careerCost(r, kind);
   if (!Career.spend(cost)) { toast('Not enough in your bankroll', 2000); return false; }
+  Achv.count('cbuyin', cost);
   S.career = { room: r.id, kind, buyin: kind === 'cash' ? r.cash : kind === 'sng' ? r.sng : r.ko[0], bounty: kind === 'ko' ? r.ko[1] : 0 };
   BUYIN = S.career.buyin; const d = Career.load(); d.visited[r.id] = true; Career.save();
   applyTheme(r);
@@ -239,7 +244,10 @@ function renderBounties() {
 const careerChip = document.createElement('div'); careerChip.className = 'careerchip'; careerChip.hidden = true; overlayEl.appendChild(careerChip);
 function renderCareerChip() {
   const on = !!S.career && S.started; careerChip.hidden = !on;
-  if (on) { const r = roomById(S.career.room); careerChip.innerHTML = `<b>${Cal.short()}</b> · ${escH(r.place)} · ${money(Career.load().bankroll)}`; }
+  if (on) {
+    const r = roomById(S.career.room), l = Career.load().bank && Career.load().bank.loan;
+    careerChip.innerHTML = `<b>${Cal.short()}</b> · ${escH(r.place)} · ${money(Career.load().bankroll)}${l && l.due > 0 ? ` · <span class="due">Bank due ${money(Math.ceil(l.due))}</span>` : ''}`;
+  }
 }
 let lobTab = 'rooms';
 function openLobby() {
@@ -254,6 +262,10 @@ function renderLobby() {
   const bail = $('#lobBail'); bail.hidden = !(d.bankroll < 50 && Date.now() - d.lastBail > 2 * 3600e3);
   document.querySelectorAll('#lobTabs button').forEach(bt => bt.classList.toggle('on', bt.dataset.tab === lobTab));
   document.querySelectorAll('#lobby .pane').forEach(pn => pn.hidden = pn.dataset.pane !== lobTab);
+  // bank
+  const bt = document.querySelector('#lobTabs button[data-tab=bank]'), dueNow = Bank.data().loan && Bank.data().loan.due > 0;
+  bt.classList.toggle('alert', !!dueNow);
+  if (lobTab === 'bank') Bank.render($('#lobBankPane'));
   // rooms
   const rooms = $('#lobRooms'); rooms.innerHTML = '';
   for (const r of ROOMS) {

@@ -21,6 +21,7 @@ function showEnd(kind) {
   Clock.stop();
   const place = kind === 'champ' ? 1 : hero.place;
   Achv.ev('sngPlace', { place });
+  if (S.career && !S.test) { Achv.count('csng'); if (prizeFor(place)) Achv.count('citm'); }
   if (S.career && prizeFor(place)) Career.add(prizeFor(place), place === 1 ? 'Tournament win' : 'Prize money');
   $('#endKicker').textContent = S.mode === 'sng' ? `${S.career ? roomById(S.career.room).place + ' · ' : ''}${S.ko ? 'Bounty ' : ''}Sit & Go · $${fmt(BUYIN)} buy-in · ${S.level === 'sharp' ? 'Sharp' : 'Relaxed'}` : 'Cash game';
   const prize = $('#endPrize');

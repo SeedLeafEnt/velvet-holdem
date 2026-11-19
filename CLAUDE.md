@@ -57,6 +57,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `07-people.js` | 3D people | `Person` (body, face, IK arms, gestures), dealer, waitress, seat labels. |
 | `08-tricks.js` | Table tricks | Anger, `taunt`, `tipDealer`, AI bribes, the rig. |
 | `09-career.js` | Stage 3 | `ROOMS`, `Career`, `Cal` (game calendar), `Achv`, `Daily`, bounties, lobby. |
+| `09b-bank.js` | Bank | `Bank`: credit score, play style, loans, savings, the lobby's Bank tab. |
 | `10-bar.js` | Stage 2 | `DRINKS`, `Bar` (waitress), `heroOrder`, `sendDrink`. |
 | `11-stage1.js` | Stage 1 | Tilt, celebrations, `heroTap`, `heroThrow`, slow-roll, side bets, `Jackpot`. |
 | `12-casino.js` | Stage 4 | `Casino` (own scene/camera), `BJ` blackjack, `RL` roulette. |
@@ -111,6 +112,7 @@ python selfplay3d.py        # main check: hand ranks, side pots, 2 Sit & Gos + 8
 | `selfplay_ko.py` | Same for bounty Sit & Gos. |
 | `pwa.py` | Manifest and icons load, the service worker caches the game, the table starts offline. |
 | `gamecal.py 0` / `gamecal.py 1` | Calendar: date maths, day/week/month events, 4 h per hand, 2 h per casino round (phone / desktop). |
+| `bank.py 0` / `bank.py 1` | Bank: score, offer, borrow, interest due in week 1, on-time and missed payments, savings, early withdrawal; screenshots. |
 | `act.py 0` / `act.py 1` | Tap menus on phone (0) / desktop (1); screenshots of each. |
 | `casino.py`, `casino2.py`, `casino2rl.py`, `rlcam.py` | Blackjack and roulette: payouts, cameras, exit to lobby. |
 | `stage1.py`, `stage2s.py`, `stage3.py` | Side bets and reactions; the waitress; career lobby. |
@@ -156,11 +158,33 @@ The game skips service-worker registration under test automation
 - Other systems subscribe with `Cal.on(fn)`; `fn({ type: 'day'|'week'|'month', from, to })`.
 - Daily chips and daily challenges still follow the real date (not changed yet).
 
+## Bank (`Bank` in `09b-bank.js`)
+
+- Lives in the career save: `Career.load().bank` = `{ loan, deposits, ontime, missed, seq, offerDay }`.
+  Money moves only through `Career.add` / `Career.spend`.
+- Credit score 300–850 = 560 + factors (shown to the player under "Why this score"):
+  career hands, play style, Sit & Go cash rate, level, bankroll, on-time and missed
+  payments, being behind, owing more than you have. Play style comes from career
+  counters `chands`, `cvpip`, `cpfr` (counted in `afterHand`), `csng`/`citm`
+  (`showEnd`), `cbuyin` (`startCareerGame`), `cwager` (blackjack and roulette).
+- `LOAN_TIERS`: the score sets the monthly rate (2–7%) and the limit
+  (base + bankroll × multiple). Below 450: declined. You apply, it "checks your
+  record", and the offer lasts for that game day (`offerDay`).
+- Interest builds every game day (rate / 30 of the balance). On the 1st of a month
+  it becomes `due`, payable by the end of day 7 (`dueBy`). Missed: a 25% late fee
+  (min $25), `missed++`, `late = true` (no new loans until a later on-time payment
+  or full repayment); the bank takes it from the bankroll if you have twice the amount,
+  otherwise it is added to the loan.
+- `SAVE_PLANS`: easy access 0.4%, fixed 1/3/6 months at 0.8/1.2/1.6% a month.
+  Savings rates stay below the best loan rate (2%) so borrowing to save never pays.
+  Interest compounds on the 1st. Early withdrawal: no interest and a 5% fee.
+- The career chip on the table shows "Bank due $X" in red while a payment is due,
+  and the lobby's Bank tab gets a red dot.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).
-2. Bank: loans offered from your play style and history, interest, repayment in the
-   first week of each month; deposits where a higher rate locks the money longer.
+2. ~~Bank: loans, interest due in the first week, savings with a chosen rate~~ — done (see above).
 3. Drinks with effects: a buzz meter (a small boost), drunk mistakes for AI and
    hero, opponents can send the hero a drink to accept or refuse.
 4. Bribes and police: higher bribe acceptance, a heat meter, a patrolling cop,

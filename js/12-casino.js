@@ -286,6 +286,7 @@ const BJ = {
     if (back > 0) { Career.add(Math.round(back)); if (wins) Sound.win(); }
     else Sound.lose();
     const net = back - this.hands.reduce((s, h) => s + h.bet, 0);
+    Achv.count('cwager', this.hands.reduce((s, h) => s + h.bet, 0));
     showResult(net > 0 ? `You win ${money(net)}` : net === 0 ? 'Push' : `You lose ${money(-net)}`, net > 0 ? 'win' : net === 0 ? 'push' : 'lose');
     Cal.advance('casino');
     Casino.renderTop();
@@ -444,6 +445,7 @@ const RL = {
     if (!tot) return; if (tot < lim[0]) { toast(`Table minimum is ${money(lim[0])}`, 1500); return; }
     if (!Career.spend(tot)) { toast('Not enough in your bankroll', 1500); return; }
     Casino.renderTop(); this.lastBets = { ...this.bets }; this.phase = 'spin'; this.undo = [];
+    Achv.count('cwager', tot);
     const res = secureInt(37), k = RL_ORDER.indexOf(res), now = performance.now() / 1000;
     this.spin = { t0: now + 0.45, res, k, a0: this.beta + this.lock * POCKET, w0: -(10.5 + Math.random() * 2.5), T1: 3.4 + Math.random() * 0.7, T2: 1.9 };
     if (this.croupier) this.croupier.gesture('reach', 0.9, { world: new V3(0.36, 0.06, this.W0.z + 0.3), side: 1 });
