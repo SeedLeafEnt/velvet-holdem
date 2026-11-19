@@ -70,6 +70,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `17-flow.js` | Game flow | `newGame`, `gameLoop`, `playHand`, `bettingRound`, `takeTurn`, `showdown`, `afterHand`. |
 | `18-overlays.js` | Overlays | `openOverlay`, `closeOverlay`, menus, `showStart`. |
 | `18b-city.js` | City | `City`: the 3D home screen (own canvas, renderer and bloom), places, labels, dock. |
+| `18c-places.js` | Interiors | `Places`: 3D bank hall, card club lounge, casino floor and jail cell block behind the menus. |
 | `19-boot.js` | Persistence, boot | `SET_KEY`, `SAVE_KEY`; start-up; service-worker registration; `window.__velvet` test hook. |
 
 Other files: `voice/*.mp3` (recorded voices; `VOICE_DATA` has every clip's
@@ -245,13 +246,29 @@ start screen is also used instead of the 3D city, so older tests can click `#btn
 - Camera: on wide screens the whole street; on phones it glides to the chosen place
   (‹ ›, swipe, or tap a building or its label). A "Continue" pill shows when a saved game exists.
 
+## Interiors (`Places` in `18c-places.js`)
+
+- `City.open` steps inside before opening the menu: `Places.enter('bank' | 'club' | 'casino' | 'jail')`
+  swaps the city's render pass to that interior's scene and camera (built on first visit) and adds
+  `body.in-place` / `#city.inside`. The menu then floats over the room: a bottom sheet on phones,
+  a right-hand panel on wide screens (CSS `body.in-place #lobby`). The camera's view offset keeps
+  the room visible beside the menu.
+- `City.frame` backs out to the street (`Places.leave`) as soon as `#lobby` is hidden.
+  `City.hide` (a game starting) also leaves. Indoors the bloom is gentler (threshold 0.9).
+- All procedural like the street; uses the game's `Person` class for tellers, players, the
+  bartender, croupiers, an inmate and the guard (`FLOOR_Y` −0.78, seated people at y 0,
+  standing people 1.2 m above the floor). Slot reels spin, the vault wheel turns, the roulette
+  wheel spins, one jail tube flickers, people glance at the camera now and then.
+- Phone opens the Challenges tab on the street (no interior); the jail interior shows only while
+  you are locked up.
+
 ## Upgrade plan (agreed order)
 
 1. ~~Calendar that runs while you play~~ — done (see above).
 2. ~~Bank: loans, interest due in the first week, savings with a chosen rate~~ — done (see above).
 3. ~~Drinks with effects: buzz, luck, drunk mistakes, drink offers~~ — done (see above).
 4. ~~Bribes and police: heat, patrol, arrests, jail~~ — done (see above).
-5. UI/UX: ~~3D city home screen~~ done. Still to do: an in-game phone (calendar, bank,
+5. UI/UX: ~~3D city home screen~~ and ~~3D interiors~~ done. Still to do: an in-game phone (calendar, bank,
    messages), livelier characters (free 3D models), cinematic all-in and river moments,
    day/night lighting.
 6. Voices last (ElevenLabs, about 14,600 credits): write and approve the lines

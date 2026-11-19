@@ -34,7 +34,7 @@ const City = {
     if (!this.raf) this.loop();
     return true;
   },
-  hide() { this.active = false; cityEl.hidden = true; document.body.classList.remove('in-city'); this.card(false); },
+  hide() { Places.leave(); this.active = false; cityEl.hidden = true; document.body.classList.remove('in-city'); this.card(false); },
   loop() { this.raf = requestAnimationFrame(t => { this.raf = 0; if (!this.active) return; this.frame(t); this.loop(); }); },
 
   /* ---------- what each place says and does ---------- */
@@ -49,11 +49,11 @@ const City = {
   open(id) {
     unlockAudio(); Sound.tick();
     const j = Jail.data();
-    if (id === 'bank') return openLobby({ tab: 'bank', title: 'Velvet Bank' });
     if (id === 'phone') return openLobby({ tab: 'daily', title: 'Phone' });
-    if (j || id === 'jail') { if (j) openLobby({ tab: 'rooms', title: 'County Jail' }); return; }
-    if (id === 'club') return openLobby({ tab: 'rooms', filter: 'poker', title: 'Riverside Card Club' });
-    if (id === 'casino') return openLobby({ tab: 'rooms', filter: 'casino', title: 'The Golden Strip' });
+    if (id === 'bank') { Places.enter('bank'); return openLobby({ tab: 'bank', title: 'Velvet Bank' }); }
+    if (j || id === 'jail') { if (j) { Places.enter('jail'); openLobby({ tab: 'rooms', title: 'County Jail' }); } return; }
+    if (id === 'club') { Places.enter('club'); return openLobby({ tab: 'rooms', filter: 'poker', title: 'Riverside Card Club' }); }
+    if (id === 'casino') { Places.enter('casino'); return openLobby({ tab: 'rooms', filter: 'casino', title: 'The Golden Strip' }); }
   },
   refresh() {
     const d = Career.load(), j = Jail.data(), l = d.bank && d.bank.loan;
@@ -292,7 +292,7 @@ const City = {
 
     // glow
     const composer = new FX.EffectComposer(renderer);
-    composer.addPass(new FX.RenderPass(scene, camera));
+    const renderPass = new FX.RenderPass(scene, camera); composer.addPass(renderPass); this.renderPass = renderPass;
     const bloom = new FX.UnrealBloomPass(new T.Vector2(256, 256), 0.7, 0.5, 0.86); composer.addPass(bloom);
     composer.addPass(new FX.OutputPass());
     Object.assign(this, { composer, bloom, groups, bulbs, police, blinkers, cars, ray: new T.Raycaster(), ndc: new T.Vector2(), t0: performance.now() });
@@ -328,9 +328,12 @@ const City = {
     const w = innerWidth, h = innerHeight; this.portrait = w / h < 1;
     this.renderer.setSize(w, h, false); this.composer.setSize(w, h); this.bloom.resolution.set(w / 2, h / 2);
     this.camera.aspect = w / h; this.camera.fov = this.portrait ? 50 : 38; this.camera.updateProjectionMatrix();
+    Places.resize();
   },
   frame(now) {
     const t = (now - this.t0) / 1000, dt = Math.min(0.05, this.lastT ? t - this.lastT : 0.016); this.lastT = t;
+    if (Places.cur && $('#lobby').hidden) Places.leave(); // the menu was closed: back out to the street
+    if (Places.cur) { Places.frame(dt, t); if (now - this.lastUi > 1000) { this.lastUi = now; this.refresh(); } this.composer.render(); return; }
     const cam = this.camera, P = this.portrait;
     const target = P ? this.focusX : this.focusX * 0.35;
     this.camX += (target - this.camX) * Math.min(1, dt * 2.2);

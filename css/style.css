@@ -673,3 +673,12 @@ body.in-casino #dock, body.in-casino #overlay, body.in-casino #btnChat, body.in-
 #city .cphone i { width: 12px; height: 20px; border: 2px solid #e7c77f; border-radius: 4px; }
 #city .cphone em { font-style: normal; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: #e0413c; color: #fff; font-size: 12px; line-height: 18px; }
 #city .cphone em[hidden] { display: none; }
+
+/* Inside a place (18c-places.js): the 3D room shows around the menu */
+#city.inside .cpin, #city.inside .ccard, #city.inside .cdock, #city.inside .ccont, #city.inside #cPins { display: none; }
+body.in-place #lobby { background: linear-gradient(0deg, rgba(3,5,7,.55), rgba(3,5,7,0) 70%); backdrop-filter: none; -webkit-backdrop-filter: none; align-items: end; padding: 0; }
+body.in-place #lobby .lobsheet { width: 100%; max-width: 560px; max-height: 66vh; border-radius: 22px 22px 0 0; background: linear-gradient(180deg, rgba(19,28,34,.94), rgba(11,17,21,.97)); }
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) {
+  body.in-place #lobby { place-items: center end; padding: 0 4vw 0 0; background: linear-gradient(270deg, rgba(3,5,7,.6), rgba(3,5,7,0) 55%); }
+  body.in-place #lobby .lobsheet { width: min(44vw, 500px); max-height: 88vh; border-radius: 22px; }
+}

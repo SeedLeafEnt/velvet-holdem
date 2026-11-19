@@ -20,7 +20,7 @@ async def main():
         await pg.wait_for_timeout(2500)
         home = await pg.evaluate("() => ({ city: window.__velvet.City.active, shown: !document.querySelector('#city').hidden, start: !document.querySelector('#startScreen').hidden, pins: document.querySelectorAll('#city .cpin').length, date: document.querySelector('#cDate').textContent, bank: document.querySelector('#cBank').textContent, badge: document.querySelector('#cBadge').textContent })")
         await pg.screenshot(path=shot(f"{name}_1_home.png"))
-        L = "() => ({ open: !document.querySelector('#lobby').hidden, title: document.querySelector('#lobby h2').textContent, tab: [...document.querySelectorAll('#lobTabs button')].find(b => b.classList.contains('on')).dataset.tab, poker: [...document.querySelectorAll('#lobRooms .games:not(.casino)')].filter(e => !e.hidden).length, casino: document.querySelectorAll('#lobRooms .games.casino').length, jail: !!document.querySelector('#lobRooms .jailcard') })"
+        L = "() => ({ open: !document.querySelector('#lobby').hidden, title: document.querySelector('#lobby h2').textContent, tab: [...document.querySelectorAll('#lobTabs button')].find(b => b.classList.contains('on')).dataset.tab, poker: [...document.querySelectorAll('#lobRooms .games:not(.casino)')].filter(e => !e.hidden).length, casino: document.querySelectorAll('#lobRooms .games.casino').length, jail: !!document.querySelector('#lobRooms .jailcard'), place: window.__velvet.Places.cur })"
         async def visit(i):
             await pg.evaluate(f"() => window.__velvet.City.focus({i}, true)"); await pg.wait_for_timeout(700)
             await pg.click("#cCardGo"); await pg.wait_for_timeout(500)
@@ -30,7 +30,8 @@ async def main():
         await pg.screenshot(path=shot(f"{name}_2_card.png"))
         club = await visit(1)
         await pg.screenshot(path=shot(f"{name}_3_club_lobby.png"))
-        await pg.click("#lobby .close-x"); await pg.wait_for_timeout(300)
+        await pg.click("#lobby .close-x"); await pg.wait_for_timeout(500)
+        street = await pg.evaluate("() => window.__velvet.Places.cur")
         casino = await visit(2); await pg.click("#lobby .close-x"); await pg.wait_for_timeout(300)
         bank = await visit(0); await pg.click("#lobby .close-x"); await pg.wait_for_timeout(300)
         await pg.click("#cPhone"); await pg.wait_for_timeout(400); phone = await pg.evaluate(L); await pg.click("#lobby .close-x"); await pg.wait_for_timeout(300)
@@ -57,6 +58,7 @@ async def main():
         checks = {
             "home": home["city"] and home["shown"] and not home["start"] and home["pins"] == 4 and home["date"].startswith("Mon 1 Jan") and home["bank"] == "$3,000",
             "club": club["open"] and club["title"] == "Riverside Card Club" and club["poker"] >= 2 and club["casino"] == 0,
+            "inside places": club["place"] == "club" and casino["place"] == "casino" and bank["place"] == "bank" and jail["place"] == "jail" and phone["place"] is None and street is None,
             "casino": casino["open"] and casino["title"] == "The Golden Strip" and casino["poker"] == 0 and casino["casino"] >= 2,
             "bank": bank["open"] and bank["tab"] == "bank" and bank["title"] == "Velvet Bank",
             "phone": phone["open"] and phone["tab"] == "daily",
