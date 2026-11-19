@@ -7,7 +7,9 @@ the same day became an installable web app (PWA) in `C:\Users\User\velvet-holdem
 - The old copy in `Documents\velvet-holdem` is a backup only. Windows
   "Controlled folder access" is on, and it blocks Python, PowerShell and other
   tools from creating files inside Documents. Do not move the project back there.
-- Git and Node are not installed. There is no build step.
+- Git and GitHub CLI are installed (winget, 2026-11-19); Node is not. There is
+  no build step. Shells opened before the install may not have them on PATH:
+  `C:\Program Files\Git\cmd\git.exe`, `C:\Program Files\GitHub CLI\gh.exe`.
 
 ## Run it
 
@@ -129,8 +131,13 @@ The game skips service-worker registration under test automation
 
 ## Where it lives
 
-- Not hosted yet. The plan is free static hosting (for example GitHub Pages),
-  so the user can open a link on the iPhone and use "Add to Home Screen".
+- Live at **https://seedleafent.github.io/velvet-holdem/** (GitHub Pages, public
+  repo https://github.com/SeedLeafEnt/velvet-holdem, branch `main`, root folder).
+  The user installs it with "Add to Home Screen" on the iPhone.
+- To publish a change: run the tests, commit, `git push`. Pages rebuilds in about
+  a minute. Installed copies pick up new code on their next online start
+  (code is network-first in `sw.js`). Ask the user before pushing.
+- Commits use the GitHub no-reply address set in the repo's local git config.
 - The old claude.ai artifact "Velvet Hold'em"
   (https://claude.ai/artifact/4pxB58D35P128yb7xXy2GW) is the single-file version
   from before the split. It is not updated any more.
