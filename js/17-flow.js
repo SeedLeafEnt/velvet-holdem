@@ -14,7 +14,7 @@ function resetTableVisuals() {
   chipsDirty = true;
   clearTags(); clearBubbles(); setActive(-1); seatEls.forEach(e => e.classList.remove('winner', 'thinking')); for (let i = 0; i < NS; i++) setEq(i, null);
   bannerEl.className = ''; potLbl.classList.add('off'); betLbls.forEach(l => l.classList.add('off'));
-  CAM.focus = 0;
+  CAM.focus = 0; TFX.reset();
   if (dealerP) { dealerP.gest = null; dealerP.emo = null; dealerP.holding = false; }
   if (deckMesh && A.deckRest) { deckMesh.position.set(A.deckRest.x, 0.011, A.deckRest.z); deckMesh.rotation.y = 0; A.deck.copy(A.deckRest); }
 }
@@ -177,7 +177,7 @@ async function playHand() {
   }
   if (liveCount() === 1) await winUncontested();
   else await showdown();
-  focusCamera(false);
+  focusCamera(false); TFX.dimRoom(false);
   S.inHand = false; S.betweenHands = true;
 }
 
@@ -254,7 +254,9 @@ async function burnCard() {
 async function dealStreet(n) {
   await burnCard();
   applyRigBoard(n);
-  const drama = S.runout && n >= 4;
+  const bigRiver = n === 5 && !S.runout && liveCount() >= 2 && S.pot >= S.bb * 25; // a big pot: slow, dramatic river
+  const drama = (S.runout && n >= 4) || bigRiver;
+  if (bigRiver) TFX.dimRoom(true);
   await delay(drama ? 600 : 240);
   if (n === 3) {
     const cs = [S.deck.pop(), S.deck.pop(), S.deck.pop()];
@@ -442,7 +444,7 @@ async function revealRunout() {
   const live = S.players.filter(inHand);
   dealerSay('allinCall', 'All in and a call. Cards up, please.', true);
   for (const q of live) if (!q.isHero) pEmote(q.i, q.persona === 'station' || q.persona === 'rock' ? 'worried' : 'focused', 6);
-  focusCamera(true);
+  focusCamera(true); TFX.dimRoom(true);
   for (const p of live) {
     if (p.isHero) continue;
     await Promise.all(p.cards.map((card, k) => moveCard(card, { k: 'hole', seat: p.i, n: k, rev: true }, { up: true, dur: 480, arc: 0.03, delay: k * 60 })));
@@ -478,7 +480,7 @@ async function payout(winners, amount) {
   for (const p of order) { if (rem <= 0) break; const x = Math.min(5, rem); shares.set(p, shares.get(p) + x); rem -= x; }
   S.pot -= amount; renderPot();
   Sound.chips(12, 0.9);
-  if (order[0]) dGest('pushTo', 0.95, { world: A.pot, world2: A.seats[order[0].i].stack });
+  if (order[0]) { dGest('pushTo', 0.95, { world: A.pot, world2: A.seats[order[0].i].stack }); TFX.dimRoom(false); TFX.spotOn(order[0]); }
   await Promise.all(order.map(p => {
     const share = shares.get(p);
     return flyChips(share, A.pot, A.seats[p.i].stack, { dur: 640, arc: 0.12 }).then(() => {
@@ -505,7 +507,7 @@ async function winUncontested() {
   const w = S.players.find(inHand);
   S.lastWinners = new Set(w ? [w] : []); if (w && w.isHero) { Hero.winAt = performance.now(); Hero.losers = []; }
   const amount = S.pot;
-  seatEls[w.i].classList.add('winner');
+  seatEls[w.i].classList.add('winner'); TFX.spotOn(w);
   logLine(`${w.name} wins ${fmt(amount)}`, 'res');
   bg(banner(`${w.isHero ? 'You win' : w.name + ' wins'} ${fmt(amount)}`, '', 1300));
   await payout([w], amount);

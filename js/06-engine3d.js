@@ -499,8 +499,8 @@ function initGL() {
   spot.castShadow = true; spot.shadow.mapSize.set(smallScreen ? 1024 : 2048, smallScreen ? 1024 : 2048); spot.shadow.bias = -0.00025; spot.shadow.normalBias = 0.012;
   spot.shadow.camera.near = 1.2; spot.shadow.camera.far = 4.2; spot.shadow.radius = 3;
   scene.add(spot, spot.target);
-  scene.add(new THREE.HemisphereLight(0xa9bcc8, 0x1a1110, 0.42));
-  const fill = new THREE.DirectionalLight(0xd2ddff, 0.8); fill.position.set(0.5, 1.5, 3.4); scene.add(fill);
+  G.hemi = new THREE.HemisphereLight(0xa9bcc8, 0x1a1110, 0.36); scene.add(G.hemi);
+  G.fill = new THREE.DirectionalLight(0xd2ddff, 0.65); G.fill.position.set(0.5, 1.5, 3.4); scene.add(G.fill);
 
   TEX.feltBump = noiseTex(256, 60); TEX.leather = noiseTex(256, 40, 260); TEX.wood = woodTex(); TEX.carpet = carpetTex(); TEX.glow = glowTex();
   MAT.felt = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.94, metalness: 0, bumpMap: TEX.feltBump, bumpScale: 0.35 });
@@ -545,6 +545,7 @@ function initGL() {
   initPeopleGeo();
   dealerP = new Person('dealer', 7, true); scene.add(dealerP.root);
   Bar.init();
+  TFX.init(); // glow, vignette, cinematic light and the neighbouring tables (14-render.js)
   G.ok = true;
   return true;
 }

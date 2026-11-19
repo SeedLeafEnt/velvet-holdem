@@ -64,7 +64,7 @@ module, which is why `RUN++` or `S` work across files. What changed:
 | `11-stage1.js` | Stage 1 | Tilt, celebrations, `heroTap`, `heroThrow`, slow-roll, side bets, `Jackpot`. |
 | `12-casino.js` | Stage 4 | `Casino` (own scene/camera), `BJ` blackjack, `RL` roulette. |
 | `13-talk-act.js` | Talk & tap | Table-talk sheet; `Act` tap-a-person popover. |
-| `14-render.js` | Render loop | `layout()`, `frame(now)` (hands off to `Casino.frame` in the casino). |
+| `14-render.js` | Render loop | `layout()`, `frame(now)` (hands off to `Casino.frame` in the casino); `TFX` table light and cinema. |
 | `15-hud.js` | HUD | Seats, table talk, tournament clock, top bar, hero dock, `heroAct`. |
 | `16-ai.js` | AI, pots | Decisions, reads, timing tells; `buildPots`. |
 | `17-flow.js` | Game flow | `newGame`, `gameLoop`, `playHand`, `bettingRound`, `takeTurn`, `showdown`, `afterHand`. |
@@ -261,6 +261,20 @@ start screen is also used instead of the 3D city, so older tests can click `#btn
   wheel spins, one jail tube flickers, people glance at the camera now and then.
 - Phone opens the Challenges tab on the street (no interior); the jail interior shows only while
   you are locked up.
+
+## Table light and cinema (`TFX` in `14-render.js`)
+
+- The table renders through a bloom composer (skipped on 'Battery saver'). Threshold 2.4 on
+  purpose: under the table lamp, white cards are brighter than 1.0, and a low threshold turns
+  your hole cards into unreadable glowing blobs. Only glass and metal highlights glow.
+- `.tvig` vignette over the canvas; `TFX.dimRoom(true)` (all-in run-outs in `revealRunout`, and
+  big rivers: pot ≥ 25 BB with 2+ players, which also deal the river slowly) dims the
+  hemisphere and fill lights and darkens the vignette; the pot award and the end of the hand
+  restore it. `TFX.spotOn(p)` swings a spotlight onto the winner's chips (plus a sparkle for
+  opponents). `TFX.neighbours()` adds other tables and warm floor light at the edges,
+  rebuilt on orientation change. `G.hemi` / `G.fill` are the lights it dims.
+- The patrolling officer stands in the gap between the dealer and the player to his right,
+  a step back (`Police.beat`), so he never stands over a chair.
 
 ## Upgrade plan (agreed order)
 

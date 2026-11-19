@@ -67,7 +67,12 @@ const Police = {
   appear(at) { const c = this.ensureCop(); if (!c) return; if (!c.root.visible) { c.root.position.copy(at); c.root.position.y = this.Y; c.root.visible = true; c.alpha = 1; } },
   walkPath(path, speed = 1.1) { return new Promise(res => { this.move = { path, k: 0, speed, done: res }; }); },
   // patrol spots: just behind the dealer, where the officer shows on phones and computers alike
-  beat(k) { const db = A.dealerBody; return k ? new V3(db.x + 0.82, 0, db.z + 0.02) : new V3(db.x + 0.5, 0, db.z - 0.12); }, // the dealer's right, never crossing behind him
+  // patrol spots: in the gap between the dealer and the player to his right, a step further back, so the officer never stands over a chair
+  beat(k) {
+    const db = A.dealerBody, right = [1, 2, 3, 4].map(i => A.seats[i]).filter(s => s && s.body.x > 0.2).sort((a, b) => a.body.z - b.body.z)[0];
+    const gx = right ? (db.x + right.body.x) / 2 : db.x + 0.7, gz = Math.min(db.z, right ? right.body.z : db.z) - 0.5;
+    return k ? new V3(gx + 0.25, 0, gz - 0.2) : new V3(gx - 0.1, 0, gz);
+  },
   startPatrol() { this.mode = 'patrol'; this.appear(Bar.oval(288, 1.45)); this.leg = 0; this.pause = 0; this.walkPath([this.beat(0)], 0.9); },
   endPatrol() { this.mode = 'leaving'; this.walkPath([Bar.oval(288, 1.45)], 1).then(() => { if (this.mode === 'leaving') { this.mode = 'off'; if (this.cop) this.cop.root.visible = false; } }); },
   update(dt, t) {

@@ -682,3 +682,9 @@ body.in-place #lobby .lobsheet { width: 100%; max-width: 560px; max-height: 66vh
   body.in-place #lobby { place-items: center end; padding: 0 4vw 0 0; background: linear-gradient(270deg, rgba(3,5,7,.6), rgba(3,5,7,0) 55%); }
   body.in-place #lobby .lobsheet { width: min(44vw, 500px); max-height: 88vh; border-radius: 22px; }
 }
+
+/* Table vignette; darker during all-in run-outs and big rivers (TFX in 14-render.js) */
+.tvig { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at 50% 46%, transparent 55%, rgba(0,0,0,.42)); }
+.tvig::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,.72)); }
+#stage.cine .tvig::after { opacity: 1; }
+body.in-casino .tvig { display: none; }
